@@ -1,0 +1,116 @@
+{
+  "name": "payload-auth-rbac-plugin",
+  "version": "1.0.0",
+  "description": "A plugin for Payload CMS to manage authentication and authorization",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./client": {
+      "default": "./src/exports/client.ts"
+    },
+    "./rsc": {
+      "default": "./src/exports/rsc.ts"
+    },
+    "./types": {
+      "default": "./src/types.ts"
+    },
+    "./utils": {
+      "default": "./src/lib/utils/index.ts"
+    }
+  },
+  "main": "./src/index.ts",
+  "types": "./src/general.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "pnpm copyfiles && pnpm build:types && pnpm build:swc",
+    "build:swc": "swc ./src -d ./dist --config-file .swcrc --strip-leading-paths",
+    "build:types": "tsc --outDir dist --rootDir ./src",
+    "clean": "rimraf {dist,*.tsbuildinfo}",
+    "copyfiles": "copyfiles -u 1 \"src/**/*.{html,css,scss,ttf,woff,woff2,eot,svg,jpg,png,json}\" dist/",
+    "dev": "next dev dev --turbo",
+    "dev:generate-importmap": "pnpm dev:payload generate:importmap",
+    "dev:generate-types": "pnpm dev:payload generate:types",
+    "dev:payload": "cross-env PAYLOAD_CONFIG_PATH=./dev/payload.config.ts payload",
+    "generate:importmap": "pnpm dev:generate-importmap",
+    "generate:types": "pnpm dev:generate-types",
+    "lint": "biome check",
+    "lint:fix": "biome check --write",
+    "test": "pnpm test:int && pnpm test:e2e",
+    "test:e2e": "playwright test",
+    "test:int": "vitest"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.15",
+    "@payloadcms/db-mongodb": "3.84.1",
+    "@payloadcms/db-postgres": "3.84.1",
+    "@payloadcms/db-sqlite": "3.84.1",
+    "@payloadcms/next": "3.84.1",
+    "@payloadcms/richtext-lexical": "3.84.1",
+    "@payloadcms/translations": "^3.84.1",
+    "@payloadcms/ui": "3.84.1",
+    "@playwright/test": "1.58.2",
+    "@swc-node/register": "1.10.9",
+    "@swc/cli": "0.6.0",
+    "@types/node": "22.19.9",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "copyfiles": "2.4.1",
+    "cross-env": "^7.0.3",
+    "graphql": "^16.8.1",
+    "mongodb-memory-server": "10.1.4",
+    "next": "16.2.6",
+    "open": "^10.1.0",
+    "payload": "3.84.1",
+    "qs-esm": "8.0.1",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "rimraf": "3.0.2",
+    "sharp": "0.34.2",
+    "sort-package-json": "^2.10.0",
+    "typescript": "5.7.3",
+    "vite-tsconfig-paths": "6.0.5",
+    "vitest": "4.0.18"
+  },
+  "peerDependencies": {
+    "payload": "^3.84.1"
+  },
+  "engines": {
+    "node": "^18.20.2 || >=20.9.0",
+    "pnpm": "^9 || ^10"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "default": "./src/index.ts"
+      },
+      "./client": {
+        "default": "./src/exports/client.ts"
+      },
+      "./rsc": {
+        "default": "./src/exports/rsc.ts"
+      },
+      "./types": {
+        "default": "./src/types.ts"
+      },
+      "./utils": {
+        "default": "./src/lib/utils/index.ts"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sharp",
+      "esbuild",
+      "unrs-resolver"
+    ]
+  },
+  "registry": "https://registry.npmjs.org/",
+  "dependencies": {}
+}
