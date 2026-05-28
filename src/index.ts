@@ -12,8 +12,7 @@ import { getRolesPermissionsCollection } from "./collections/roles-permissions/i
 import { usersDefaultTranslations } from "./collections/users/default-data.js";
 import { modifyUsersCollection } from "./collections/users/index.js";
 import { rolePermissionMatrixClientDefaultTranslations } from "./components/role-permission-matrix-client/default-data.js";
-// import { customEndpointHandler } from "./endpoints/customEndpointHandler.js";
-// import { NAMESPACE } from "./lib/constants/general.js";
+
 import {
   getAllTranslationsOfSpecificObject,
   getMergedTranslations,
@@ -27,6 +26,10 @@ import type {
   RolesPermissionsCollectionTranslations,
   UsersModificationTranslations,
 } from "./types.js";
+
+export * from "./lib/constants/index.js";
+export * from "./lib/utils/index.js";
+
 
 export type PayloadAuthRbacPluginConfig = {
   /**

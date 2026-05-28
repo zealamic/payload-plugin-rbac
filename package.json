@@ -4,6 +4,13 @@
   "description": "A plugin for Payload CMS to manage authentication and authorization",
   "license": "MIT",
   "type": "module",
+  "keywords": [
+    "payload",
+    "plugin",
+    "rbac",
+    "authentication",
+    "authorization"
+  ],
   "exports": {
     ".": {
       "default": "./src/index.ts"
@@ -80,8 +87,7 @@
     "payload": "^3.84.1"
   },
   "engines": {
-    "node": "^18.20.2 || >=20.9.0",
-    "pnpm": "^9 || ^10"
+    "node": "^18.20.2 || >=20.9.0"
   },
   "publishConfig": {
     "exports": {
@@ -103,13 +109,6 @@
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "sharp",
-      "esbuild",
-      "unrs-resolver"
-    ]
   },
   "registry": "https://registry.npmjs.org/",
   "dependencies": {}
