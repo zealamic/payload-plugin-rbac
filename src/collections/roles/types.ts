@@ -1,4 +1,8 @@
-import type { Access, CollectionConfig, Field } from "payload";
+import type { CollectionConfig, Field } from "payload";
+import type { DATA_SCOPE, STATUS } from "../../lib/constants/role.js";
+
+export type DataScope = (typeof DATA_SCOPE)[keyof typeof DATA_SCOPE];
+export type RoleStatus = (typeof STATUS)[keyof typeof STATUS];
 
 export type RolesCollectionTranslations = {
   [locale: string]: {
@@ -28,6 +32,13 @@ export type RolesCollectionTranslations = {
         activeLabel?: string;
         inactiveLabel?: string;
       };
+      dataScope?: {
+        label?: string;
+        placeholder?: string;
+        allLabel?: string;
+        ownLabel?: string;
+        hierarchyLabel?: string;
+      };
       permissionMatrix?: {
         label?: string;
         placeholder?: string;
@@ -39,7 +50,7 @@ export type RolesCollectionTranslations = {
 export type RolesCollectionParams = {
   translations?: RolesCollectionTranslations;
   fields?: Field[];
-  access?: Access;
+  access?: CollectionConfig["access"];
   labels?: CollectionConfig["labels"];
   admin?: CollectionConfig["admin"];
 };

@@ -1,4 +1,4 @@
-import type { Access, CollectionConfig, Field } from "payload";
+import type { CollectionConfig, Field } from "payload";
 
 export type RolesPermissionsCollectionTranslations = {
   [locale: string]: {
@@ -29,7 +29,7 @@ export type RolesPermissionsCollectionTranslations = {
 export type RolesPermissionsCollectionParams = {
   translations?: RolesPermissionsCollectionTranslations;
   fields?: Field[];
-  access?: Access;
+  access?: CollectionConfig["access"];
   labels?: CollectionConfig["labels"];
   admin?: CollectionConfig["admin"];
 };

@@ -2,8 +2,11 @@ import type { Config, Field, PayloadRequest } from "payload";
 import {
   getArrayOfMergedFieldAffectingData,
   getPermissionAccess,
+  getPermissionAndDataScopeMutationAccess,
+  getPermissionAndDataScopeReadAccess,
   toLocaleRecord,
 } from "../../lib/utils/index.js";
+import { mergeUserCollectionHooks } from "./parent-path.js";
 import type {
   UsersModificationParams,
   UsersModificationTranslations,
@@ -36,6 +39,25 @@ const buildDefaultFields = (
         (locale) => translations[locale]?.fields?.roles?.label,
       ),
     },
+    {
+      name: "parent",
+      type: "relationship",
+      relationTo: "users",
+      label: toLocaleRecord(
+        locales,
+        (locale) => translations[locale]?.fields?.parent?.label,
+      ),
+      filterOptions: ({ id }) => (id ? { id: { not_equals: id } } : true),
+    },
+    {
+      name: "parentPath",
+      type: "text",
+      index: true,
+      admin: {
+        hidden: true,
+        readOnly: true,
+      },
+    },
   ];
 };
 
@@ -53,23 +75,32 @@ export const modifyUsersCollection = (params: UsersModificationParams = {}) => {
     const existing = (config.collections || []).find(
       (c) => c.slug === userSlug,
     );
+    const dataScopeOptions = {
+      createdByField: "id",
+      usersCollectionSlug: userSlug,
+    } as const;
 
     const defaultAccess = {
       create: getPermissionAccess({
         featureCode: userSlug,
         actionCode: "create",
       }),
-      update: getPermissionAccess({
+      update: getPermissionAndDataScopeMutationAccess({
         featureCode: userSlug,
         actionCode: "update",
+        collectionSlug: userSlug,
+        options: dataScopeOptions,
       }),
-      delete: getPermissionAccess({
+      delete: getPermissionAndDataScopeMutationAccess({
         featureCode: userSlug,
         actionCode: "delete",
+        collectionSlug: userSlug,
+        options: dataScopeOptions,
       }),
-      read: getPermissionAccess({
+      read: getPermissionAndDataScopeReadAccess({
         featureCode: userSlug,
         actionCode: "read",
+        options: dataScopeOptions,
       }),
       readVersions: getPermissionAccess({
         featureCode: userSlug,
@@ -79,12 +110,12 @@ export const modifyUsersCollection = (params: UsersModificationParams = {}) => {
         featureCode: userSlug,
         actionCode: "unlock",
       }),
-      admin: ({ req }: { req: PayloadRequest }) => {
-        return getPermissionAccess({
-          featureCode: userSlug,
-          actionCode: "admin",
-        })({ req });
-      },
+      // admin: ({ req }: { req: PayloadRequest }) => {
+      //   return getPermissionAccess({
+      //     featureCode: userSlug,
+      //     actionCode: "admin",
+      //   })({ req })
+      // },
     };
 
     if (existing) {
@@ -99,6 +130,10 @@ export const modifyUsersCollection = (params: UsersModificationParams = {}) => {
             ...defaultAccess,
             ...collection.access,
           },
+          hooks: mergeUserCollectionHooks({
+            existingHooks: collection.hooks,
+            userSlug,
+          }),
         };
       });
     } else {
@@ -109,6 +144,7 @@ export const modifyUsersCollection = (params: UsersModificationParams = {}) => {
           auth: true,
           fields: pluginFields,
           access: defaultAccess,
+          hooks: mergeUserCollectionHooks({ userSlug }),
         },
       ];
     }

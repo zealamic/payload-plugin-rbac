@@ -1,4 +1,4 @@
-import type { Access, CollectionConfig, Field } from "payload";
+import type { CollectionConfig, Field } from "payload";
 import { STATUS } from "../../lib/constants/permission-feature.js";
 
 export type PermissionFeaturesCollectionTranslations = {
@@ -32,7 +32,7 @@ export type PermissionFeaturesCollectionTranslations = {
 export type PermissionFeaturesCollectionParams = {
   translations?: PermissionFeaturesCollectionTranslations;
   fields?: Field[];
-  access?: Access;
+  access?: CollectionConfig["access"];
   labels?: CollectionConfig["labels"];
   admin?: CollectionConfig["admin"];
 };

@@ -18,10 +18,10 @@ import {
   getMergedTranslations,
 } from "./lib/utils/index.js";
 import type {
+  PayloadAuthRbacPluginConfig,
   PermissionActionsCollectionTranslations,
   PermissionFeaturesCollectionTranslations,
   PermissionsCollectionTranslations,
-  RBACTranslations,
   RolesCollectionTranslations,
   RolesPermissionsCollectionTranslations,
   UsersModificationTranslations,
@@ -29,17 +29,6 @@ import type {
 
 export * from "./lib/constants/index.js";
 export * from "./lib/utils/index.js";
-
-
-export type PayloadAuthRbacPluginConfig = {
-  /**
-   * Collection slugs to augment (may include plugin-only collections absent from generated `CollectionSlug`).
-   */
-  collections?: Partial<Record<string, true>>;
-  disabled?: boolean;
-  translations?: RBACTranslations;
-  autoModifyUsersCollection?: boolean;
-};
 
 export const payloadAuthRbacPlugin =
   (pluginOptions: PayloadAuthRbacPluginConfig) =>
@@ -54,6 +43,7 @@ export const payloadAuthRbacPlugin =
 
     config.collections.push(
       getPermissionActionsCollection({
+        ...pluginOptions.collections?.permissionActions,
         translations: getMergedTranslations({
           defaultTranslations: permissionActionsDefaultTranslations,
           translations:
@@ -68,6 +58,7 @@ export const payloadAuthRbacPlugin =
     );
     config.collections.push(
       getPermissionFeaturesCollection({
+        ...pluginOptions.collections?.permissionFeatures,
         translations: getMergedTranslations({
           defaultTranslations: permissionFeaturesDefaultTranslations,
           translations:
@@ -82,6 +73,7 @@ export const payloadAuthRbacPlugin =
     );
     config.collections.push(
       getPermissionsCollection({
+        ...pluginOptions.collections?.permissions,
         translations: getMergedTranslations({
           defaultTranslations: permissionsDefaultTranslations,
           translations:
@@ -96,6 +88,7 @@ export const payloadAuthRbacPlugin =
     );
     config.collections.push(
       getRolesCollection({
+        ...pluginOptions.collections?.roles,
         translations: getMergedTranslations({
           defaultTranslations: rolesDefaultTranslations,
           translations:
@@ -108,6 +101,7 @@ export const payloadAuthRbacPlugin =
     );
     config.collections.push(
       getRolesPermissionsCollection({
+        ...pluginOptions.collections?.rolesPermissions,
         translations: getMergedTranslations({
           defaultTranslations: rolesPermissionsDefaultTranslations,
           translations:

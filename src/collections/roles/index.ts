@@ -1,5 +1,5 @@
-import type { CollectionConfig } from "payload";
-import { STATUS } from "../../lib/constants/role.js";
+import type { CollectionConfig, Condition } from "payload";
+import { DATA_SCOPE, STATUS } from "../../lib/constants/role.js";
 import {
   getArrayOfMergedFieldAffectingData,
   getSuperAdminAccess,
@@ -126,18 +126,42 @@ export const getRolesCollection = (params: RolesCollectionParams) => {
           },
         },
         {
-          name: "permissionMatrixDraft",
-          type: "json",
+          name: "dataScope",
+          type: "select",
+          required: true,
+          label: toLocaleRecord(
+            arrTranslationsKeys,
+            (locale) => translations[locale]?.fields?.dataScope?.label,
+          ),
+          defaultValue: DATA_SCOPE.OWN,
+          options: Object.values(DATA_SCOPE).map((dataScope) => ({
+            label: toLocaleRecord(
+              arrTranslationsKeys,
+              (locale) =>
+                translations[locale]?.fields?.dataScope?.[`${dataScope}Label`],
+            ),
+            value: dataScope,
+          })),
+          admin: {
+            placeholder: toSelectPlaceholder(
+              arrTranslationsKeys,
+              (locale) => translations[locale]?.fields?.dataScope?.placeholder,
+            ),
+          },
+        },
+        {
+          name: "permissionMatrix",
+          type: "ui",
           label: toLocaleRecord(
             arrTranslationsKeys,
             (locale) => translations[locale]?.fields?.permissionMatrix?.label,
           ),
           admin: {
             components: {
-              Field:
-                "payload-auth-rbac-plugin/client#RolePermissionMatrixClient",
+              Field: "payload-auth-rbac-plugin/client#RolePermissionMatrixClient",
             },
-            condition: (_, __, { operation }) => operation === "update",
+            condition: ((_, __, { operation }) =>
+              operation === "update") satisfies Condition,
           },
         },
       ],

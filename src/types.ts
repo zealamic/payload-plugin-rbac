@@ -34,3 +34,31 @@ export type RBACTranslations = {
     };
   };
 };
+
+export type PayloadAuthRbacPluginConfig = {
+  /**
+   * Collection slugs to augment (may include plugin-only collections absent from generated `CollectionSlug`).
+   */
+  collections?: Partial<
+    Record<
+      string,
+      | Omit<
+          PermissionActionTypes.PermissionActionsCollectionParams,
+          "translations"
+        >
+      | Omit<
+          PermissionFeatureTypes.PermissionFeaturesCollectionParams,
+          "translations"
+        >
+      | Omit<PermissionTypes.PermissionsCollectionParams, "translations">
+      | Omit<RoleTypes.RolesCollectionParams, "translations">
+      | Omit<
+          RolePermissionTypes.RolesPermissionsCollectionParams,
+          "translations"
+        >
+    >
+  >;
+  disabled?: boolean;
+  translations?: RBACTranslations;
+  autoModifyUsersCollection?: boolean;
+};

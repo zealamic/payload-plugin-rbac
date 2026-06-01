@@ -28,6 +28,13 @@ export const rolesDefaultTranslations: RolesCollectionTranslations = {
         activeLabel: "Active",
         inactiveLabel: "Inactive",
       },
+      dataScope: {
+        label: "Data Scope",
+        placeholder: "Select data scope",
+        ownLabel: "Own",
+        allLabel: "All",
+        hierarchyLabel: "Hierarchy",
+      },
       permissionMatrix: {
         label: "Permission Matrix",
         placeholder: "Select permission matrix",

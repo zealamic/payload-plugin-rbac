@@ -8,6 +8,11 @@ export const usersDefaultTranslations: UsersModificationTranslations = {
       },
       roles: {
         label: "Roles",
+        placeholder: "Select roles",
+      },
+      parent: {
+        label: "Parent",
+        placeholder: "Select parent",
       },
     },
   },

@@ -266,8 +266,8 @@ export const RolePermissionMatrixClient = () => {
                           >
                             <input
                               type="checkbox"
-                              id={`permission-matrix-checkbox-${checkboxId}`}
-                              name={`permission-matrix-checkbox-${checkboxId}`}
+                              id={`permission-matrix-checkbox-${checkboxId}-${feature.id}-${action.id}`}
+                              name={`permission-matrix-checkbox-${checkboxId}-${feature.id}-${action.id}`}
                               checked={checked}
                               disabled={isReadOnly}
                               onChange={(event) => {
@@ -282,7 +282,7 @@ export const RolePermissionMatrixClient = () => {
                               }}
                             />
                             <label
-                              htmlFor={`permission-matrix-checkbox-${checkboxId}`}
+                              htmlFor={`permission-matrix-checkbox-${checkboxId}-${feature.id}-${action.id}`}
                               style={{
                                 display: "inline-block",
                                 paddingLeft: "0.25rem",

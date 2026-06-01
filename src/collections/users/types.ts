@@ -8,6 +8,11 @@ export type UsersModificationTranslations = {
       };
       roles?: {
         label?: string;
+        placeholder?: string;
+      };
+      parent?: {
+        label?: string;
+        placeholder?: string;
       };
     };
   };
