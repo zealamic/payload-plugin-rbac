@@ -1,6 +1,6 @@
 # @zealamic/payload-auth-rbac-plugin
 
-Centralized **role-based access control (RBAC)** for [Payload CMS](https://payloadcms.com) **v3** (`payload ^3.84.1`).
+Centralized **role-based access control (RBAC)** for [Payload CMS](https://payloadcms.com) **v3**.
 
 ![Payload Auth RBAC Plugin](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/assets/cover-photo.jpg)
 
@@ -76,28 +76,29 @@ export default buildConfig({
 ```ts
 import {
   getPermissionAccess,
-  getPermissionAndDataScopeReadAccess,
-  getPermissionAndDataScopeMutationAccess,
 } from "@zealamic/payload-auth-rbac-plugin";
 
 export const Posts: CollectionConfig = {
   slug: "posts",
   access: {
-    read: getPermissionAndDataScopeReadAccess({
+    read: getPermissionAccess({
       featureCode: "posts",
       actionCode: "read",
+      // read mode is inferred when options is provided
       options: { createdByField: "createdBy" },
     }),
     create: getPermissionAccess({ featureCode: "posts", actionCode: "create" }),
-    update: getPermissionAndDataScopeMutationAccess({
+    update: getPermissionAccess({
       featureCode: "posts",
       actionCode: "update",
+      mode: "modify",
       collectionSlug: "posts",
       options: { createdByField: "createdBy" },
     }),
-    delete: getPermissionAndDataScopeMutationAccess({
+    delete: getPermissionAccess({
       featureCode: "posts",
       actionCode: "delete",
+      mode: "modify",
       collectionSlug: "posts",
       options: { createdByField: "createdBy" },
     }),
@@ -143,9 +144,7 @@ Full reference: **[UTILS](./docs/UTILS.md)**
 
 | Function                                              | Purpose                                         |
 | ----------------------------------------------------- | ----------------------------------------------- |
-| `getPermissionAccess`                                 | Permission check only                           |
-| `getPermissionAndDataScopeReadAccess`                 | Permission + read `Where` filter                |
-| `getPermissionAndDataScopeMutationAccess`             | Permission + per-document scope (update/delete) |
+| `getPermissionAccess`                                 | Unified helper: permission / read scope / modify scope |
 | `getSuperAdminAccess`                                 | Super admin only (RBAC collections default)     |
 | `canAccessDocumentByDataScope`                        | Single-document scope check                     |
 | `resolveEffectiveDataScope` / `getDataScopeReadWhere` | Scope resolution & query filters                |
@@ -168,3 +167,9 @@ Constants: `CONSTANTS.ROLE.DATA_SCOPE`, etc.
 ## License
 
 MIT
+
+---
+
+> _If this plugin helps your team ship safer access control with less friction, thank you for giving it a place in your stack._
+
+

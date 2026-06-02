@@ -1,11 +1,7 @@
-import type { CollectionConfig } from "payload"
-import {
-  getPermissionAccess,
-  getPermissionAndDataScopeMutationAccess,
-  getPermissionAndDataScopeReadAccess,
-} from "payload-auth-rbac-plugin"
+import type { CollectionConfig } from "payload";
+import { getPermissionAccess } from "payload-auth-rbac-plugin";
 
-const FEATURE_CODE = "posts"
+const FEATURE_CODE = "posts";
 
 export const postsCollection: CollectionConfig = {
   slug: "posts",
@@ -18,7 +14,7 @@ export const postsCollection: CollectionConfig = {
       featureCode: FEATURE_CODE,
       actionCode: "create",
     }),
-    read: getPermissionAndDataScopeReadAccess({
+    read: getPermissionAccess({
       featureCode: FEATURE_CODE,
       actionCode: "read",
       options: {
@@ -26,18 +22,20 @@ export const postsCollection: CollectionConfig = {
         usersCollectionSlug: "users",
       },
     }),
-    update: getPermissionAndDataScopeMutationAccess({
+    update: getPermissionAccess({
       featureCode: FEATURE_CODE,
       actionCode: "update",
+      mode: "modify",
       collectionSlug: FEATURE_CODE,
       options: {
         createdByField: "createdBy",
         usersCollectionSlug: "users",
       },
     }),
-    delete: getPermissionAndDataScopeMutationAccess({
+    delete: getPermissionAccess({
       featureCode: FEATURE_CODE,
       actionCode: "delete",
+      mode: "modify",
       collectionSlug: FEATURE_CODE,
       options: {
         createdByField: "createdBy",
@@ -72,11 +70,11 @@ export const postsCollection: CollectionConfig = {
           return {
             ...data,
             createdBy: req.user.id,
-          }
+          };
         }
 
-        return data
+        return data;
       },
     ],
   },
-}
+};

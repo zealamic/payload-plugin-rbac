@@ -1,88 +1,90 @@
-import { Access, type PayloadRequest, type Where } from "payload"
-import type { DataScope } from "../../collections/roles/types.js"
-import { STATUS as PERMISSION_STATUS } from "../constants/permission.js"
-import { DATA_SCOPE, STATUS as ROLE_STATUS } from "../constants/role.js"
-import { PARENT_PATH_SEPARATOR } from "../constants/user.js"
-import { toID } from "./data.js"
+import { Access, type PayloadRequest, type Where } from "payload";
+import type { DataScope } from "../../collections/roles/types.js";
+import { STATUS as PERMISSION_STATUS } from "../constants/permission.js";
+import { DATA_SCOPE, STATUS as ROLE_STATUS } from "../constants/role.js";
+import { PARENT_PATH_SEPARATOR } from "../constants/user.js";
+import { toID } from "./data.js";
 
 type UserRoleRef =
   | number
   | string
   | {
-      id?: number | string
-      isSuperAdmin?: boolean | null
-      dataScope?: DataScope
-    }
+      id?: number | string;
+      isSuperAdmin?: boolean | null;
+      dataScope?: DataScope;
+    };
 
 type RequestUser = {
-  id?: number | string
-  roles?: UserRoleRef[] | null
-  isSuperAdmin?: boolean | null
-}
+  id?: number | string;
+  roles?: UserRoleRef[] | null;
+  isSuperAdmin?: boolean | null;
+};
 
 export type DataScopeOptions = {
   /** Field on business collections storing the creator user id. Default: `createdBy`. */
-  createdByField?: string
+  createdByField?: string;
   /** Users collection slug. Default: `users`. */
-  usersCollectionSlug?: string
-}
+  usersCollectionSlug?: string;
+};
 
-const DEFAULT_CREATED_BY_FIELD = "createdBy"
-const DEFAULT_USERS_COLLECTION = "users"
+const DEFAULT_CREATED_BY_FIELD = "createdBy";
+const DEFAULT_USERS_COLLECTION = "users";
 
 const SCOPE_PRIORITY: Record<DataScope, number> = {
   [DATA_SCOPE.OWN]: 0,
   [DATA_SCOPE.HIERARCHY]: 1,
   [DATA_SCOPE.ALL]: 2,
-}
+};
 
-/** Role references from `req.user`, normalized to an empty array when missing. */
-const getRoleRefs = (user: RequestUser): UserRoleRef[] => user.roles ?? []
+/** Normalize role refs from `req.user` to an always-iterable array. */
+const getRoleRefs = (user: RequestUser): UserRoleRef[] => user.roles ?? [];
 
 const getRoleIds = (user: RequestUser): string[] =>
   getRoleRefs(user)
     .map((ref) => toID(ref))
-    .filter((id): id is string => Boolean(id))
+    .filter((id): id is string => Boolean(id));
 
 /**
- * True when `isSuperAdmin` is already on the session user (no DB round-trip).
- * Used before falling back to `resolveSuperAdminFromUserID`.
+ * Fast-path super-admin check from session payload (`req.user`).
+ * Avoids a database round-trip when the field is already present.
  */
 const hasInlineSuperAdmin = (user: RequestUser | null | undefined): boolean => {
   if (!user) {
-    return false
+    return false;
   }
-  return Boolean(user.isSuperAdmin)
-}
+  return Boolean(user.isSuperAdmin);
+};
 
-const pickWidestDataScope = (scopes: Array<DataScope | null | undefined>): DataScope => {
-  let widest: DataScope = DATA_SCOPE.OWN
+const pickWidestDataScope = (
+  scopes: Array<DataScope | null | undefined>,
+): DataScope => {
+  let widest: DataScope = DATA_SCOPE.OWN;
 
   for (const scope of scopes) {
     if (!scope) {
-      continue
+      continue;
     }
     if (SCOPE_PRIORITY[scope] > SCOPE_PRIORITY[widest]) {
-      widest = scope
+      widest = scope;
     }
   }
 
-  return widest
-}
+  return widest;
+};
 
 /**
- * Loads the user from the `users` collection and checks `isSuperAdmin`.
- * Ensures super-admin status reflects persisted data when the session payload is stale or partial.
+ * Fallback super-admin check against persisted users data.
+ * Use when session payload may be stale or missing `isSuperAdmin`.
  */
 const resolveSuperAdminFromUserID = async ({
   req,
   user,
 }: {
-  req: PayloadRequest
-  user: RequestUser
+  req: PayloadRequest;
+  user: RequestUser;
 }): Promise<boolean> => {
   if (!user.id) {
-    return false
+    return false;
   }
 
   const userDocs = await req.payload.find({
@@ -101,14 +103,15 @@ const resolveSuperAdminFromUserID = async ({
         },
       ],
     },
-  })
+  });
 
-  return userDocs.docs.length > 0
-}
+  return userDocs.docs.length > 0;
+};
 
 /**
- * Grants access when any of the user's roles has an enabled `roles-permissions` row
- * for an active permission matching `featureCode` and `actionCode`.
+ * Resolve RBAC permission from role assignments:
+ * 1) find active `permissions` by feature/action code
+ * 2) check an enabled `roles-permissions` row for any user role
  */
 const resolvePermissionFromRoleID = async ({
   req,
@@ -116,14 +119,14 @@ const resolvePermissionFromRoleID = async ({
   featureCode,
   actionCode,
 }: {
-  req: PayloadRequest
-  user: RequestUser
-  featureCode: string
-  actionCode: string
+  req: PayloadRequest;
+  user: RequestUser;
+  featureCode: string;
+  actionCode: string;
 }): Promise<boolean> => {
-  const roleIDs = getRoleIds(user)
+  const roleIDs = getRoleIds(user);
   if (!roleIDs.length) {
-    return false
+    return false;
   }
 
   const permissions = await req.payload.find({
@@ -145,12 +148,12 @@ const resolvePermissionFromRoleID = async ({
         },
       ],
     },
-  })
+  });
 
   if (!permissions.docs.length) {
-    return false
+    return false;
   }
-  const permissionIDs = permissions.docs.map((item) => item.id)
+  const permissionIDs = permissions.docs.map((item) => item.id);
   const rolePermissions = await req.payload.find({
     collection: "roles-permissions",
     depth: 0,
@@ -170,69 +173,68 @@ const resolvePermissionFromRoleID = async ({
         },
       ],
     },
-  })
+  });
 
-  return rolePermissions.docs.length > 0
-}
+  return rolePermissions.docs.length > 0;
+};
 
 /**
- * Payload access helper: allow only super admins.
- * Checks inline `isSuperAdmin` on `req.user`, then the `users` collection.
+ * Access helper: allow only super admins.
+ * Check session first, then persisted users data.
  */
 export const getSuperAdminAccess = async ({ req }: { req: PayloadRequest }) => {
-  const user = req.user as RequestUser | undefined
+  const user = req.user as RequestUser | undefined;
   if (!user) {
-    return false
+    return false;
   }
 
   if (hasInlineSuperAdmin(user)) {
-    return true
+    return true;
   }
 
-  return await resolveSuperAdminFromUserID({ req, user })
-}
+  return await resolveSuperAdminFromUserID({ req, user });
+};
 
 /**
- * Payload access helper: allow the document owner (`req.user.id === id`) or a super admin.
+ * Access helper: allow current document owner or super admin.
  */
-export const getAuthenticatedOrSuperAdminAccess: Access | Promise<boolean> = async ({
-  req,
-  id,
-}) => {
-  const user = req.user as RequestUser | undefined
+export const getAuthenticatedOrSuperAdminAccess:
+  | Access
+  | Promise<boolean> = async ({ req, id }) => {
+  const user = req.user as RequestUser | undefined;
   if (!user?.id) {
-    return false
+    return false;
   }
 
   if (String(user.id) === String(id)) {
-    return true
+    return true;
   }
 
   if (hasInlineSuperAdmin(user)) {
-    return true
+    return true;
   }
-  return await resolveSuperAdminFromUserID({ req, user })
-}
+  return await resolveSuperAdminFromUserID({ req, user });
+};
 
 /**
- * Returns a Payload access function for a feature/action pair (e.g. `users` + `read`).
- * Super admins bypass; others are checked via roles and `roles-permissions`.
+ * Core RBAC access function (permission-only).
+ * Super admins bypass; others are evaluated via roles + `roles-permissions`.
  */
-export const getPermissionAccess = ({
+const getBasePermissionAccess = ({
   featureCode,
   actionCode,
 }: {
-  featureCode: string
-  actionCode: string
+  featureCode: string;
+  actionCode: string;
 }) => {
   return async ({ req }: { req: PayloadRequest }) => {
-    const user = req.user as RequestUser | undefined
+    const user = req.user as RequestUser | undefined;
     if (!user) {
-      return false
+      return false;
     }
 
     if (hasInlineSuperAdmin(user)) {
-      return true
+      return true;
     }
 
     return await resolvePermissionFromRoleID({
@@ -240,33 +242,33 @@ export const getPermissionAccess = ({
       user,
       featureCode,
       actionCode,
-    })
-  }
-}
+    });
+  };
+};
 
 /**
- * Resolves the effective data scope for the current user from active roles.
+ * Resolve effective data scope from active roles.
  * Widest scope wins: `all` > `hierarchy` > `own`.
  */
 export const resolveEffectiveDataScope = async (
   req: PayloadRequest,
   options: DataScopeOptions = {},
 ): Promise<DataScope> => {
-  const user = req.user as RequestUser | undefined
+  const user = req.user as RequestUser | undefined;
 
   if (!user) {
-    return DATA_SCOPE.OWN
+    return DATA_SCOPE.OWN;
   }
 
   if (hasInlineSuperAdmin(user)) {
-    return DATA_SCOPE.ALL
+    return DATA_SCOPE.ALL;
   }
 
-  const roleRefs = getRoleRefs(user)
-  const roleIDs = getRoleIds(user)
+  const roleRefs = getRoleRefs(user);
+  const roleIDs = getRoleIds(user);
 
   if (!roleIDs.length) {
-    return DATA_SCOPE.OWN
+    return DATA_SCOPE.OWN;
   }
 
   const inlineScopes = roleRefs
@@ -275,10 +277,10 @@ export const resolveEffectiveDataScope = async (
         typeof ref === "object" && ref !== null,
     )
     .map((ref) => ref.dataScope)
-    .filter((scope): scope is DataScope => Boolean(scope))
+    .filter((scope): scope is DataScope => Boolean(scope));
 
   if (inlineScopes.length === roleRefs.length) {
-    return pickWidestDataScope(inlineScopes)
+    return pickWidestDataScope(inlineScopes);
   }
 
   const roles = await req.payload.find({
@@ -288,31 +290,36 @@ export const resolveEffectiveDataScope = async (
     pagination: false,
     req,
     where: {
-      and: [{ id: { in: roleIDs } }, { status: { equals: ROLE_STATUS.ACTIVE } }],
+      and: [
+        { id: { in: roleIDs } },
+        { status: { equals: ROLE_STATUS.ACTIVE } },
+      ],
     },
-  })
+  });
 
   return pickWidestDataScope(
     roles.docs.map((role) => (role as { dataScope?: DataScope }).dataScope),
-  )
-}
+  );
+};
 
 /**
- * User IDs visible under hierarchy: self + direct/indirect subordinates (via `parent` / `parentPath`).
+ * Collect visible user IDs for hierarchy scope:
+ * current user + direct/indirect descendants from `parent` / `parentPath`.
  */
 export const getHierarchyVisibleUserIds = async (
   req: PayloadRequest,
   options: DataScopeOptions = {},
 ): Promise<string[]> => {
-  const usersCollectionSlug = options.usersCollectionSlug ?? DEFAULT_USERS_COLLECTION
-  const user = req.user as RequestUser | undefined
-  const userId = user?.id
+  const usersCollectionSlug =
+    options.usersCollectionSlug ?? DEFAULT_USERS_COLLECTION;
+  const user = req.user as RequestUser | undefined;
+  const userId = user?.id;
 
   if (!userId) {
-    return []
+    return [];
   }
 
-  const selfId = String(userId)
+  const selfId = String(userId);
 
   const descendants = await req.payload.find({
     collection: usersCollectionSlug,
@@ -327,81 +334,85 @@ export const getHierarchyVisibleUserIds = async (
         { parentPath: { contains: `${selfId}${PARENT_PATH_SEPARATOR}` } },
       ],
     },
-  })
+  });
 
-  const ids = new Set<string>([selfId])
+  const ids = new Set<string>([selfId]);
 
   for (const doc of descendants.docs) {
-    const id = toID(doc as UserRoleRef)
+    const id = toID(doc as UserRoleRef);
     if (id) {
-      ids.add(id)
+      ids.add(id);
     }
   }
 
-  return [...ids]
-}
+  return [...ids];
+};
 
 /**
- * Payload `where` clause limiting reads to documents the user may see for their data scope.
- * Returns `true` when no extra filter is needed (super admin or `all` scope).
+ * Build a read `Where` filter from data scope.
+ * Returns `true` when no extra filtering is required (`all` scope / super admin).
  */
 export const getDataScopeReadWhere = async (
   req: PayloadRequest,
   options: DataScopeOptions = {},
 ): Promise<Where | true> => {
-  const user = req.user as RequestUser | undefined
-  const createdByField = options.createdByField ?? DEFAULT_CREATED_BY_FIELD
+  const user = req.user as RequestUser | undefined;
+  const createdByField = options.createdByField ?? DEFAULT_CREATED_BY_FIELD;
 
   if (!user?.id) {
-    return { [createdByField]: { equals: "___none___" } }
+    return { [createdByField]: { equals: "___none___" } };
   }
 
   if (hasInlineSuperAdmin(user)) {
-    return true
+    return true;
   }
 
-  const scope = await resolveEffectiveDataScope(req, options)
+  const scope = await resolveEffectiveDataScope(req, options);
 
   if (scope === DATA_SCOPE.ALL) {
-    return true
+    return true;
   }
 
-  const selfId = String(user.id)
+  const selfId = String(user.id);
 
   if (scope === DATA_SCOPE.OWN) {
-    return { [createdByField]: { equals: selfId } }
+    return { [createdByField]: { equals: selfId } };
   }
 
-  const visibleUserIds = await getHierarchyVisibleUserIds(req, options)
+  const visibleUserIds = await getHierarchyVisibleUserIds(req, options);
 
   return {
     [createdByField]: {
       in: visibleUserIds.length ? visibleUserIds : [selfId],
     },
-  }
-}
+  };
+};
 
 const getCreatedById = (
   doc: Record<string, unknown>,
   createdByField: string,
 ): string | undefined => {
-  const value = doc[createdByField]
-  return toID(value as UserRoleRef) || undefined
-}
+  const value = doc[createdByField];
+  return toID(value as UserRoleRef) || undefined;
+};
 
-const isUsersCollection = (collectionSlug: string, usersCollectionSlug: string) =>
-  collectionSlug === usersCollectionSlug
+const isUsersCollection = (
+  collectionSlug: string,
+  usersCollectionSlug: string,
+) => collectionSlug === usersCollectionSlug;
 
 /**
- * Whether the target user document is protected from update/delete by non–super-admins
- * (`isSuperAdmin === true`). Applies to `DATA_SCOPE.ALL` on the users collection.
+ * Guard for privileged user documents.
+ * Non-super-admins cannot mutate users where `isSuperAdmin === true`.
  */
-export const isProtectedSuperAdminUserDoc = (doc: Record<string, unknown>): boolean =>
-  Boolean(doc.isSuperAdmin)
+export const isProtectedSuperAdminUserDoc = (
+  doc: Record<string, unknown>,
+): boolean => Boolean(doc.isSuperAdmin);
 
 /**
- * Checks if the current user may perform `actionCode` on `doc` under data scope rules.
- * Requires an enabled role permission for `featureCode` + `actionCode` (super admins bypass).
+ * Document-level access check:
+ * RBAC permission (`featureCode` + `actionCode`) + data-scope evaluation.
+ * Super admins bypass.
  */
 export const canAccessDocumentByDataScope = async ({
   req,
@@ -411,23 +422,24 @@ export const canAccessDocumentByDataScope = async ({
   collectionSlug,
   options = {},
 }: {
-  req: PayloadRequest
-  doc: Record<string, unknown>
-  featureCode: string
-  actionCode: string
-  collectionSlug: string
-  options?: DataScopeOptions
+  req: PayloadRequest;
+  doc: Record<string, unknown>;
+  featureCode: string;
+  actionCode: string;
+  collectionSlug: string;
+  options?: DataScopeOptions;
 }): Promise<boolean> => {
-  const user = req.user as RequestUser | undefined
-  const createdByField = options.createdByField ?? DEFAULT_CREATED_BY_FIELD
-  const usersCollectionSlug = options.usersCollectionSlug ?? DEFAULT_USERS_COLLECTION
+  const user = req.user as RequestUser | undefined;
+  const createdByField = options.createdByField ?? DEFAULT_CREATED_BY_FIELD;
+  const usersCollectionSlug =
+    options.usersCollectionSlug ?? DEFAULT_USERS_COLLECTION;
 
   if (!user?.id) {
-    return false
+    return false;
   }
 
   if (hasInlineSuperAdmin(user)) {
-    return true
+    return true;
   }
 
   const hasPermission = await resolvePermissionFromRoleID({
@@ -435,17 +447,17 @@ export const canAccessDocumentByDataScope = async ({
     user,
     featureCode,
     actionCode,
-  })
+  });
 
   if (!hasPermission) {
-    return false
+    return false;
   }
 
-  const scope = await resolveEffectiveDataScope(req, options)
-  const creatorId = getCreatedById(doc, createdByField)
+  const scope = await resolveEffectiveDataScope(req, options);
+  const creatorId = getCreatedById(doc, createdByField);
 
   if (!creatorId) {
-    return true
+    return true;
   }
 
   if (
@@ -453,82 +465,90 @@ export const canAccessDocumentByDataScope = async ({
     isUsersCollection(collectionSlug, usersCollectionSlug) &&
     isProtectedSuperAdminUserDoc(doc)
   ) {
-    return false
+    return false;
   }
 
   if (scope === DATA_SCOPE.ALL) {
-    return true
+    return true;
   }
 
-  const selfId = String(user.id)
+  const selfId = String(user.id);
 
   if (scope === DATA_SCOPE.OWN) {
-    return creatorId === selfId
+    return creatorId === selfId;
   }
 
-  const visibleUserIds = await getHierarchyVisibleUserIds(req, options)
-  return visibleUserIds.includes(creatorId)
-}
+  const visibleUserIds = await getHierarchyVisibleUserIds(req, options);
+  return visibleUserIds.includes(creatorId);
+};
 
 /**
- * Merges a base `where` with data-scope read constraints.
+ * Merge an existing `where` with scope-derived constraints.
  */
-export const mergeDataScopeWhere = (base: Where | undefined, scopeWhere: Where | true): Where => {
+export const mergeDataScopeWhere = (
+  base: Where | undefined,
+  scopeWhere: Where | true,
+): Where => {
   if (scopeWhere === true) {
-    return base ?? {}
+    return base ?? {};
   }
 
   if (!base || Object.keys(base).length === 0) {
-    return scopeWhere
+    return scopeWhere;
   }
 
   return {
     and: [base, scopeWhere],
-  }
-}
+  };
+};
 
 /**
- * Combines RBAC permission check with data-scope read filter for collection `read` access.
+ * Access helper for collection `read`:
+ * RBAC permission check + data-scope `Where` filter.
  */
-export const getPermissionAndDataScopeReadAccess = ({
+const getPermissionAndDataScopeReadAccess = ({
   featureCode,
   actionCode,
   options = {},
 }: {
-  featureCode: string
-  actionCode: string
-  options?: DataScopeOptions
+  featureCode: string;
+  actionCode: string;
+  options?: DataScopeOptions;
 }) => {
   return async ({ req }: { req: PayloadRequest }) => {
-    const hasPermission = await getPermissionAccess({ featureCode, actionCode })({
+    const hasPermission = await getBasePermissionAccess({
+      featureCode,
+      actionCode,
+    })({
       req,
-    })
+    });
 
     if (!hasPermission) {
-      return false
+      return false;
     }
 
-    return getDataScopeReadWhere(req, options)
-  }
-}
+    return getDataScopeReadWhere(req, options);
+  };
+};
 
 /**
- * Collection document access with permission (`featureCode` + `actionCode`) and data scope.
+ * Access helper for document mutations (`update`/`delete`):
+ * load target document then apply RBAC + data-scope checks.
  */
-export const getPermissionAndDataScopeMutationAccess = ({
+const getPermissionAndDataScopeModifyAccess = ({
   featureCode,
   actionCode,
   collectionSlug,
   options = {},
 }: {
-  featureCode: string
-  actionCode: string
-  collectionSlug: string
-  options?: DataScopeOptions
+  featureCode: string;
+  actionCode: string;
+  collectionSlug?: string;
+  options?: DataScopeOptions;
 }) => {
   return async ({ req, id }: { req: PayloadRequest; id?: string | number }) => {
-    if (!id) {
-      return false
+    if (!id || !collectionSlug) {
+      return false;
     }
 
     const doc = await req.payload.findByID({
@@ -536,7 +556,7 @@ export const getPermissionAndDataScopeMutationAccess = ({
       id,
       depth: 0,
       req,
-    })
+    });
 
     return canAccessDocumentByDataScope({
       req,
@@ -545,6 +565,47 @@ export const getPermissionAndDataScopeMutationAccess = ({
       actionCode,
       collectionSlug,
       options,
-    })
+    });
+  };
+};
+
+/**
+ * Unified access entrypoint.
+ *
+ * Modes:
+ * - `none`: permission-only (boolean)
+ * - `modify`: per-document mutation check (requires `collectionSlug` + runtime `id`)
+ * - implicit read mode: pass `options` to get a read `Where` filter after permission check
+ */
+
+export const getPermissionAccess = ({
+  featureCode,
+  actionCode,
+  mode = "none",
+  collectionSlug,
+  options,
+}: {
+  featureCode: string;
+  actionCode: string;
+  mode?: "none" | "modify";
+  collectionSlug?: string;
+  options?: DataScopeOptions;
+}) => {
+  if (mode === "modify") {
+    return getPermissionAndDataScopeModifyAccess({
+      featureCode,
+      actionCode,
+      collectionSlug,
+      options,
+    });
   }
-}
+
+  if (options && Object.keys(options).length > 0) {
+    return getPermissionAndDataScopeReadAccess({
+      featureCode,
+      actionCode,
+      options,
+    });
+  }
+  return getBasePermissionAccess({ featureCode, actionCode });
+};

@@ -1,340 +1,221 @@
 # Utils reference
 
-Helpers exported from `@zealamic/payload-auth-rbac-plugin` (same as `/utils`).
+This document lists only utilities that are currently exported.
 
-```ts
-import {
-  getPermissionAccess,
-  getPermissionAndDataScopeReadAccess,
-  getPermissionAndDataScopeMutationAccess,
-  canAccessDocumentByDataScope,
-  resolveEffectiveDataScope,
-  getDataScopeReadWhere,
-  getHierarchyVisibleUserIds,
-  mergeDataScopeWhere,
-  getSuperAdminAccess,
-  getAuthenticatedOrSuperAdminAccess,
-  isProtectedSuperAdminUserDoc,
-  toID,
-  CONSTANTS,
-} from "@zealamic/payload-auth-rbac-plugin";
-```
+Export sources:
 
-## How access is resolved
+- `@zealamic/payload-auth-rbac-plugin`
+- `@zealamic/payload-auth-rbac-plugin/utils`
 
-For permission-based helpers, evaluation order is:
-
-1. No `req.user` → **deny**
-2. `req.user.isSuperAdmin === true` (or persisted super admin) → **allow**
-3. Find active `permissions` where `permissionFeature.code` + `permissionAction.code` match
-4. Check whether any of the user's roles has an **enabled** row in `roles-permissions`
-
-`featureCode` / `actionCode` must match `permission-features.code` and `permission-actions.code` in the database.
+> Barrel file: `src/lib/utils/index.ts`
 
 ---
 
-## Permission helpers
+## Exported modules
 
-### `getPermissionAccess({ featureCode, actionCode })`
+`src/lib/utils/index.ts` exports from:
 
-Returns a Payload `access` function that checks RBAC only (no row-level filter).
+1. `access`
+2. `data`
+3. `fields`
+4. `localization`
 
-**Use for:** `create`, or any operation that does not need data-scope filtering.
+---
+
+## Access exports
+
+### `type DataScopeOptions`
 
 ```ts
-import { getPermissionAccess } from "@zealamic/payload-auth-rbac-plugin";
+type DataScopeOptions = {
+  createdByField?: string // default: "createdBy"
+  usersCollectionSlug?: string // default: "users"
+}
+```
 
-export const Orders: CollectionConfig = {
-  slug: "orders",
-  access: {
-    create: getPermissionAccess({
-      featureCode: "orders",
-      actionCode: "create",
-    }),
-    // read / update / delete: see data-scope helpers below
+Use this to configure ownership field and users slug for hierarchy logic.
+
+### `getPermissionAccess({ featureCode, actionCode, mode?, collectionSlug?, options? })`
+
+Unified access helper for Payload `access` config.
+
+You can use one function for all common access cases:
+
+- permission-only (`create`, `readVersions`, `unlock`, ...)
+- read with data-scope filter
+- modify (`update` / `delete`) with per-document scope check
+
+Parameters:
+
+- `featureCode` (`string`): feature code in `permission-features.code`
+- `actionCode` (`string`): action code in `permission-actions.code`
+- `mode` (`"none" | "modify"`, optional):
+  - `"none"` (default) = permission check only
+  - `"modify"` = check one target document by `id`
+- `collectionSlug` (`string`, optional): required when `mode: "modify"`
+- `options` (`DataScopeOptions`, optional): data-scope config
+
+What it returns:
+
+- In permission-only mode: Payload access function returning `boolean`
+- In read-scope mode (`options` provided): Payload access function returning `boolean | Where`
+- In modify mode: Payload access function returning `boolean`
+
+```ts
+// 1) permission-only (best for create/readVersions/unlock/etc.)
+create: getPermissionAccess({
+  featureCode: "posts",
+  actionCode: "create",
+})
+
+// 2) read + scope (read mode inferred when options exists)
+read: getPermissionAccess({
+  featureCode: "posts",
+  actionCode: "read",
+  options: {
+    createdByField: "createdBy",
+    usersCollectionSlug: "users",
   },
-};
+})
+
+// 3) update/delete + document scope (requires mode + collectionSlug)
+update: getPermissionAccess({
+  featureCode: "posts",
+  actionCode: "update",
+  mode: "modify",
+  collectionSlug: "posts",
+  options: { createdByField: "createdBy" },
+})
 ```
 
----
+How it works internally:
+
+1. deny when `req.user` is missing
+2. allow immediately for super admin
+3. check RBAC by `featureCode` + `actionCode`
+4. if read-scope mode: return scope filter (`true` or `Where`)
+5. if modify mode: load target document by `id`, then enforce data scope
+
+When to use each mode:
+
+- **Permission-only**: operations that do not depend on document ownership/hierarchy  
+  Example: `create`, `readVersions`, `unlock`
+- **Read-scope**: list/read access that must be filtered by owner/hierarchy/all
+- **Modify**: `update` and `delete` where permission depends on the specific document
+
+Common mistakes to avoid:
+
+- `mode: "modify"` without `collectionSlug` -> always denied
+- expecting read-scope behavior without passing `options`
+- `featureCode` / `actionCode` not matching values in your permission collections
 
 ### `getSuperAdminAccess`
 
-Allow only super admins. Used by plugin RBAC collections (`roles`, `permissions`, …).
-
-```ts
-import { getSuperAdminAccess } from "@zealamic/payload-auth-rbac-plugin";
-
-access: {
-  read: getSuperAdminAccess,
-  update: getSuperAdminAccess,
-}
-```
-
----
+Allow only super admins.
 
 ### `getAuthenticatedOrSuperAdminAccess`
 
-Allow when `req.user.id === id` (document owner) **or** the user is a super admin.
-
-**Use for:** profile-style access on the users collection (e.g. read/update own user record).
-
-```ts
-import { getAuthenticatedOrSuperAdminAccess } from "@zealamic/payload-auth-rbac-plugin";
-
-access: {
-  read: getAuthenticatedOrSuperAdminAccess,
-  update: getAuthenticatedOrSuperAdminAccess,
-}
-```
-
----
-
-## Data scope helpers
-
-Each **role** has a `dataScope`:
-
-| Value | Meaning |
-|-------|---------|
-| `own` | Only documents where `createdByField` equals the current user |
-| `hierarchy` | Documents created by self or subordinates (`users.parent` / `parentPath`) |
-| `all` | All documents (subject to permission check) |
-
-When a user has multiple roles, the **widest** scope wins: `all` > `hierarchy` > `own`.
-
-Import scope values:
-
-```ts
-import { CONSTANTS } from "@zealamic/payload-auth-rbac-plugin";
-
-const { DATA_SCOPE } = CONSTANTS.ROLE;
-// DATA_SCOPE.OWN | DATA_SCOPE.HIERARCHY | DATA_SCOPE.ALL
-```
-
-### `DataScopeOptions`
-
-Shared optional config for scope helpers:
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| `createdByField` | `"createdBy"` | Field on your collection storing the creator user id |
-| `usersCollectionSlug` | `"users"` | Users collection slug (for hierarchy lookups) |
-
-Your collection should set `createdBy` on create (hook or default):
-
-```ts
-hooks: {
-  beforeChange: [
-    ({ req, data, operation }) => {
-      if (operation === "create" && req.user?.id && !data?.createdBy) {
-        return { ...data, createdBy: req.user.id };
-      }
-      return data;
-    },
-  ],
-},
-```
-
----
-
-### `getPermissionAndDataScopeReadAccess({ featureCode, actionCode, options? })`
-
-Combines RBAC **and** a Payload `Where` filter for `read` access.
-
-- Returns `false` if the user lacks permission
-- Returns `true` if super admin or effective scope is `all` (no extra filter)
-- Returns a `Where` object otherwise (e.g. `{ createdBy: { equals: userId } }`)
-
-```ts
-import { getPermissionAndDataScopeReadAccess } from "@zealamic/payload-auth-rbac-plugin";
-
-access: {
-  read: getPermissionAndDataScopeReadAccess({
-    featureCode: "posts",
-    actionCode: "read",
-    options: {
-      createdByField: "createdBy",
-      usersCollectionSlug: "users",
-    },
-  }),
-},
-```
-
----
-
-### `getPermissionAndDataScopeMutationAccess({ featureCode, actionCode, collectionSlug, options? })`
-
-For `update` / `delete`: loads the target document by `id`, then checks permission + per-document scope.
-
-```ts
-import { getPermissionAndDataScopeMutationAccess } from "@zealamic/payload-auth-rbac-plugin";
-
-access: {
-  update: getPermissionAndDataScopeMutationAccess({
-    featureCode: "posts",
-    actionCode: "update",
-    collectionSlug: "posts",
-    options: { createdByField: "createdBy" },
-  }),
-  delete: getPermissionAndDataScopeMutationAccess({
-    featureCode: "posts",
-    actionCode: "delete",
-    collectionSlug: "posts",
-    options: { createdByField: "createdBy" },
-  }),
-},
-```
-
----
-
-### `canAccessDocumentByDataScope({ req, doc, featureCode, actionCode, collectionSlug, options? })`
-
-Lower-level check for **one document** (custom access, hooks, endpoints).
-
-```ts
-import { canAccessDocumentByDataScope } from "@zealamic/payload-auth-rbac-plugin";
-
-const allowed = await canAccessDocumentByDataScope({
-  req,
-  doc: post,
-  featureCode: "posts",
-  actionCode: "update",
-  collectionSlug: "posts",
-  options: { createdByField: "createdBy" },
-});
-
-if (!allowed) {
-  throw new APIError("Forbidden", 403);
-}
-```
-
----
+Allow current document owner or super admin.
 
 ### `resolveEffectiveDataScope(req, options?)`
 
-Returns the user's effective scope: `"own" | "hierarchy" | "all"`.
-
-```ts
-const scope = await resolveEffectiveDataScope(req);
-
-if (scope === CONSTANTS.ROLE.DATA_SCOPE.ALL) {
-  // show admin-wide dashboard
-}
-```
-
----
-
-### `getDataScopeReadWhere(req, options?)`
-
-Builds the `Where` clause for list/read queries without running the permission check.
-
-```ts
-const scopeWhere = await getDataScopeReadWhere(req, {
-  createdByField: "createdBy",
-});
-
-const result = await req.payload.find({
-  collection: "posts",
-  where: mergeDataScopeWhere(
-    { status: { equals: "published" } },
-    scopeWhere,
-  ),
-});
-```
-
----
+Resolve effective scope from roles: `own | hierarchy | all`.
+Widest scope wins: `all > hierarchy > own`.
 
 ### `getHierarchyVisibleUserIds(req, options?)`
 
-Returns user IDs visible under **hierarchy** scope: self + descendants via `parent` / `parentPath`.
+Return visible user IDs in hierarchy scope (self + descendants).
 
-```ts
-const visibleIds = await getHierarchyVisibleUserIds(req);
+### `getDataScopeReadWhere(req, options?)`
 
-// e.g. filter a report by team members
-where: {
-  createdBy: { in: visibleIds },
-},
-```
-
----
-
-### `mergeDataScopeWhere(base, scopeWhere)`
-
-Merges an existing `Where` with a scope filter.
-
-- If `scopeWhere === true` → returns `base` unchanged (no scope limit)
-- Otherwise → `{ and: [base, scopeWhere] }`
-
-```ts
-import { mergeDataScopeWhere, getDataScopeReadWhere } from "@zealamic/payload-auth-rbac-plugin";
-
-const scopeWhere = await getDataScopeReadWhere(req);
-const where = mergeDataScopeWhere(
-  { title: { contains: "draft" } },
-  scopeWhere,
-);
-```
-
----
+Build data-scope read filter as `Where | true`.
 
 ### `isProtectedSuperAdminUserDoc(doc)`
 
-Returns `true` when a user document has `isSuperAdmin: true`. Non–super-admins with `all` scope cannot update/delete that user (guardrail on the users collection).
+Guard helper for user docs with `isSuperAdmin: true`.
+
+### `canAccessDocumentByDataScope({ req, doc, featureCode, actionCode, collectionSlug, options? })`
+
+Low-level per-document RBAC + data-scope check.
+
+### `mergeDataScopeWhere(base, scopeWhere)`
+
+Merge existing `where` with scope constraints.
 
 ```ts
-if (isProtectedSuperAdminUserDoc(userDoc)) {
-  // apply extra UI warnings or block non-admin edits
-}
+const scopeWhere = await getDataScopeReadWhere(req, { createdByField: "createdBy" })
+const where = mergeDataScopeWhere({ status: { equals: "published" } }, scopeWhere)
 ```
 
 ---
 
-## General utilities
+## Data exports
 
 ### `toID(value)`
 
-Normalizes a relationship value or id to a string id.
+Normalize relationship/id values to string id.
 
 ```ts
-import { toID } from "@zealamic/payload-auth-rbac-plugin";
-
-toID("507f1f77bcf86cd799439011"); // "507f1f77bcf86cd799439011"
-toID({ id: "507f1f77bcf86cd799439011", name: "Admin" }); // "507f1f77bcf86cd799439011"
-toID(undefined); // ""
+toID("507f1f77bcf86cd799439011") // "507f1f77bcf86cd799439011"
+toID({ id: "507f1f77bcf86cd799439011" }) // "507f1f77bcf86cd799439011"
+toID(undefined) // ""
 ```
 
 ---
 
-## Constants
+## Fields exports
 
-`CONSTANTS` groups plugin enums:
+### `getMergedFieldAffectingData({ fields, defaultField })`
 
-```ts
-import { CONSTANTS } from "@zealamic/payload-auth-rbac-plugin";
+Merge one plugin default field with a user override by matching field name.
 
-CONSTANTS.ROLE.DATA_SCOPE;       // { ALL, OWN, HIERARCHY }
-CONSTANTS.ROLE.STATUS;           // { ACTIVE, INACTIVE }
-CONSTANTS.PERMISSION.STATUS;
-CONSTANTS.PERMISSION_ACTION.TYPE; // { MAIN, SUB }
-CONSTANTS.USER.PARENT_PATH_SEPARATOR;
-```
+### `getArrayOfMergedFieldAffectingData({ fields, defaultFields })`
+
+Build final fields list:
+
+- merge defaults by matching names
+- append unmatched custom fields
 
 ---
 
-## Full collection example
+## Localization exports
 
-See `dev/collections/posts.ts` in this repo for a working pattern:
+### `toLocaleRecord(locales, getValue)`
 
-- `getPermissionAccess` on `create`
-- `getPermissionAndDataScopeReadAccess` on `read`
-- `getPermissionAndDataScopeMutationAccess` on `update` / `delete`
-- `beforeChange` hook to set `createdBy`
+Build `{ [locale]: string }` records from locale list.
+
+### `toSelectPlaceholder(locales, getValue)`
+
+Build serializable select placeholders (safe across Payload v3 server/client boundary).
+
+### `getMergedTranslations({ defaultTranslations, translations })`
+
+Deep-merge translation objects.
+
+### `getAllTranslationsOfSpecificObject({ translations, path, locales? })`
+
+Extract nested translation branch by path (example: `"collections.roles"`).
+
+---
+
+## Commonly paired constant export
+
+Not from `lib/utils`, but often used with access helpers:
+
+```ts
+import { CONSTANTS } from "@zealamic/payload-auth-rbac-plugin"
+
+CONSTANTS.ROLE.DATA_SCOPE
+CONSTANTS.ROLE.STATUS
+CONSTANTS.PERMISSION.STATUS
+CONSTANTS.PERMISSION_ACTION.TYPE
+CONSTANTS.USER.PARENT_PATH_SEPARATOR
+```
 
 ---
 
 ## Related docs
 
-- [README](../README.md) — install, quick start, plugin options
-- [COLLECTIONS](./COLLECTIONS.md) — RBAC collection schemas
-- [TRANSLATIONS](./TRANSLATIONS.md) — Admin / matrix i18n
+- [README](../README.md) — install and quick start
+- [COLLECTIONS](./COLLECTIONS.md) — collection schemas and customization
+- [TRANSLATIONS](./TRANSLATIONS.md) — i18n keys

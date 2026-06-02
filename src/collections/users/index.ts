@@ -2,8 +2,6 @@ import type { Config, Field, PayloadRequest } from "payload";
 import {
   getArrayOfMergedFieldAffectingData,
   getPermissionAccess,
-  getPermissionAndDataScopeMutationAccess,
-  getPermissionAndDataScopeReadAccess,
   toLocaleRecord,
 } from "../../lib/utils/index.js";
 import { mergeUserCollectionHooks } from "./parent-path.js";
@@ -92,37 +90,25 @@ export const modifyUsersCollection = (params: UsersModificationParams = {}) => {
         featureCode: userSlug,
         actionCode: "create",
       }),
-      update: getPermissionAndDataScopeMutationAccess({
+      update: getPermissionAccess({
         featureCode: userSlug,
         actionCode: "update",
+        mode: "modify",
         collectionSlug: userSlug,
         options: dataScopeOptions,
       }),
-      delete: getPermissionAndDataScopeMutationAccess({
+      delete: getPermissionAccess({
         featureCode: userSlug,
         actionCode: "delete",
+        mode: "modify",
         collectionSlug: userSlug,
         options: dataScopeOptions,
       }),
-      read: getPermissionAndDataScopeReadAccess({
+      read: getPermissionAccess({
         featureCode: userSlug,
         actionCode: "read",
         options: dataScopeOptions,
       }),
-      readVersions: getPermissionAccess({
-        featureCode: userSlug,
-        actionCode: "readVersions",
-      }),
-      unlock: getPermissionAccess({
-        featureCode: userSlug,
-        actionCode: "unlock",
-      }),
-      // admin: ({ req }: { req: PayloadRequest }) => {
-      //   return getPermissionAccess({
-      //     featureCode: userSlug,
-      //     actionCode: "admin",
-      //   })({ req })
-      // },
     };
 
     if (existing) {
