@@ -2,7 +2,7 @@
 
 Centralized **role-based access control (RBAC)** for [Payload CMS](https://payloadcms.com) **v3** (`payload ^3.84.1`).
 
-![Payload Auth RBAC Plugin](https://github.com/zealamic/payload-auth-rbac-plugin/assets/cover-photo.jpg)
+![Payload Auth RBAC Plugin](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/assets/cover-photo.jpg)
 
 Permissions live in the database (feature + action), are assigned to roles, and enforced via reusable access helpers — editable in Admin without redeploying policy code.
 
