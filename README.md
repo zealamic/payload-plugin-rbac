@@ -1,218 +1,170 @@
-# Payload Plugin Template
+# @zealamic/payload-auth-rbac-plugin
 
-A template repo to create a [Payload CMS](https://payloadcms.com) plugin.
+Centralized **role-based access control (RBAC)** for [Payload CMS](https://payloadcms.com) **v3** (`payload ^3.84.1`).
 
-Payload is built with a robust infrastructure intended to support Plugins with ease. This provides a simple, modular, and reusable way for developers to extend the core capabilities of Payload.
+![Payload Auth RBAC Plugin](https://github.com/zealamic/payload-auth-rbac-plugin/docs/cover-photo.jpg)
 
-To build your own Payload plugin, all you need is:
+Permissions live in the database (feature + action), are assigned to roles, and enforced via reusable access helpers — editable in Admin without redeploying policy code.
 
-- An understanding of the basic Payload concepts
-- And some JavaScript/Typescript experience
+---
 
-## Background
+## Documentation
 
-Here is a short recap on how to integrate plugins with Payload, to learn more visit the [plugin overview page](https://payloadcms.com/docs/plugins/overview).
+| Guide                                      | Read when you need to…                                                                                                   |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| **[COLLECTIONS](./docs/COLLECTIONS.md)**   | Understand plugin collections, users augmentation, `dataScope`, permission matrix, and **customize** fields/access/admin |
+| **[UTILS](./docs/UTILS.md)**               | Wire **access helpers** on your app collections (`getPermissionAccess`, data-scope filters, examples)                    |
+| **[TRANSLATIONS](./docs/TRANSLATIONS.md)** | Localize Admin labels, select options, and permission-matrix UI (`en`, `vi`, …)                                          |
 
-### How to install a plugin
+**Typical flow:** install → register plugin → seed RBAC data ([COLLECTIONS](./docs/COLLECTIONS.md)) → protect app collections ([UTILS](./docs/UTILS.md)) → translate Admin UI ([TRANSLATIONS](./docs/TRANSLATIONS.md)).
 
-To install any plugin, simply add it to your payload.config() in the Plugin array.
+Demo: `dev/rbac.ts`, `dev/collections/posts.ts`.
+
+---
+
+## Key features
+
+- **Five RBAC collections** — features, actions, permissions, roles, join table ([details](./docs/COLLECTIONS.md))
+- **Multi-role users** — union of enabled grants across assigned roles
+- **Granular permissions** — any `featureCode` + `actionCode` pair ([helpers](./docs/UTILS.md))
+- **Data scope** — per-role `own` / `hierarchy` / `all` for row-level filtering (`[dataScope` vs `isSuperAdmin](./docs/COLLECTIONS.md#what-is-datascope)`)
+- **Permission matrix** — role edit UI; syncs to `roles-permissions` on save
+- **TypeScript** — typed plugin options and exports (`/types`)
+- **i18n** — plugin-owned translations merged into Payload i18n ([guide](./docs/TRANSLATIONS.md))
+
+---
+
+## Installation
+
+```bash
+npm install @zealamic/payload-auth-rbac-plugin
+# or: yarn add / pnpm add @zealamic/payload-auth-rbac-plugin
+```
+
+---
+
+## Quick start
+
+### 1. Register the plugin
 
 ```ts
-import myPlugin from 'my-plugin'
+import { payloadAuthRbacPlugin } from "@zealamic/payload-auth-rbac-plugin";
 
-export const config = buildConfig({
+export default buildConfig({
   plugins: [
-    // You can pass options to the plugin
-    myPlugin({
-      enabled: true,
+    payloadAuthRbacPlugin({
+      autoModifyUsersCollection: true, // roles, isSuperAdmin, parent, default user access
+      // collections: { ... }  → see docs/COLLECTIONS.md
+      // translations: { ... }  → see docs/TRANSLATIONS.md
     }),
   ],
-})
+});
 ```
 
-### Initialization
+### 2. Seed RBAC data (Admin or script)
 
-The initialization process goes in the following order:
+1. **permission-features** — e.g. `posts`, `users` (`code` = `featureCode` in access helpers)
+2. **permission-actions** — e.g. `create`, `read`, `update`, `delete`
+3. **permissions** — one row per feature + action pair
+4. **roles** — set `[dataScope](./docs/COLLECTIONS.md#what-is-datascope)`; configure matrix on update screen → Save
+5. **users** — assign roles; bootstrap `[isSuperAdmin](./docs/COLLECTIONS.md#bootstrap-super-admin)` via seed/API
 
-1. Incoming config is validated
-2. **Plugins execute**
-3. Default options are integrated
-4. Sanitization cleans and validates data
-5. Final config gets initialized
+→ Full collection reference: **[COLLECTIONS](./docs/COLLECTIONS.md)**
 
-## Building the Plugin
-
-When you build a plugin, you are purely building a feature for your project and then abstracting it outside of the project.
-
-### Template Files
-
-In the Payload [plugin template](https://github.com/payloadcms/payload/tree/3.x/templates/plugin), you will see a common file structure that is used across all plugins:
-
-1. root folder
-2. /src folder
-3. /dev folder
-
-#### Root
-
-In the root folder, you will see various files that relate to the configuration of the plugin. We set up our environment in a similar manner in Payload core and across other projects, so hopefully these will look familiar:
-
-- **README**.md\* - This contains instructions on how to use the template. When you are ready, update this to contain instructions on how to use your Plugin.
-- **package**.json\* - Contains necessary scripts and dependencies. Overwrite the metadata in this file to describe your Plugin.
-- .**eslint**.config.js - Eslint configuration for reporting on problematic patterns.
-- .**gitignore** - List specific untracked files to omit from Git.
-- .**prettierrc**.json - Configuration for Prettier code formatting.
-- **tsconfig**.json - Configures the compiler options for TypeScript
-- .**swcrc** - Configuration for SWC, a fast compiler that transpiles and bundles TypeScript.
-- **vitest**.config.js - Config file for Vitest, defining how tests are run and how modules are resolved
-
-**IMPORTANT\***: You will need to modify these files.
-
-#### Dev
-
-In the dev folder, you’ll find a basic payload project, created with `npx create-payload-app` and the blank template.
-
-**IMPORTANT**: Make a copy of the `.env.example` file and rename it to `.env`. Update the `DATABASE_URL` to match the database you are using and your plugin name. Update `PAYLOAD_SECRET` to a unique string.
-**You will not be able to run `pnpm/yarn dev` until you have created this `.env` file.**
-
-`myPlugin` has already been added to the `payload.config()` file in this project.
+### 3. Protect app collections
 
 ```ts
-plugins: [
-  myPlugin({
-    collections: {
-      posts: true,
-    },
-  }),
-]
+import {
+  getPermissionAccess,
+  getPermissionAndDataScopeReadAccess,
+  getPermissionAndDataScopeMutationAccess,
+} from "@zealamic/payload-auth-rbac-plugin";
+
+export const Posts: CollectionConfig = {
+  slug: "posts",
+  access: {
+    read: getPermissionAndDataScopeReadAccess({
+      featureCode: "posts",
+      actionCode: "read",
+      options: { createdByField: "createdBy" },
+    }),
+    create: getPermissionAccess({ featureCode: "posts", actionCode: "create" }),
+    update: getPermissionAndDataScopeMutationAccess({
+      featureCode: "posts",
+      actionCode: "update",
+      collectionSlug: "posts",
+      options: { createdByField: "createdBy" },
+    }),
+    delete: getPermissionAndDataScopeMutationAccess({
+      featureCode: "posts",
+      actionCode: "delete",
+      collectionSlug: "posts",
+      options: { createdByField: "createdBy" },
+    }),
+  },
+  hooks: {
+    beforeChange: [
+      ({ req, data, operation }) => {
+        if (operation === "create" && req.user?.id && !data?.createdBy) {
+          return { ...data, createdBy: req.user.id };
+        }
+        return data;
+      },
+    ],
+  },
+  fields: [
+    { name: "createdBy", type: "relationship", relationTo: "users" /* ... */ },
+  ],
+};
 ```
 
-Later when you rename the plugin or add additional options, **make sure to update it here**.
+**Access order:** anonymous → deny · super admin → allow · else → matrix permission (+ data scope when using scope helpers).
 
-You may wish to add collections or expand the test project depending on the purpose of your plugin. Just make sure to keep this dev environment as simplified as possible - users should be able to install your plugin without additional configuration required.
+→ All helpers with examples: **[UTILS](./docs/UTILS.md)**
 
-When you’re ready to start development, initiate the project with `pnpm/npm/yarn dev` and pull up [http://localhost:3000](http://localhost:3000) in your browser.
+---
 
-#### Src
+## Plugin options
 
-Now that we have our environment setup and we have a dev project ready to - it’s time to build the plugin!
+| Option                      | Default | Description                                                                                 |
+| --------------------------- | ------- | ------------------------------------------------------------------------------------------- |
+| `disabled`                  | `false` | Skip runtime wiring; schema still registers                                                 |
+| `autoModifyUsersCollection` | `true`  | Add RBAC fields + access on users collection                                                |
+| `translations`              | —       | Admin / matrix i18n → **[TRANSLATIONS](./docs/TRANSLATIONS.md)**                            |
+| `collections`               | —       | Per-collection overrides → **[COLLECTIONS](./docs/COLLECTIONS.md#customizing-collections)** |
 
-**index.ts**
+Types: `@zealamic/payload-auth-rbac-plugin/types`
 
-The essence of a Payload plugin is simply to extend the payload config - and that is exactly what we are doing in this file.
+---
 
-```ts
-export const myPlugin =
-  (pluginOptions: MyPluginConfig) =>
-  (config: Config): Config => {
-    // do cool stuff with the config here
+## Exported helpers (summary)
 
-    return config
-  }
-```
+Full reference: **[UTILS](./docs/UTILS.md)**
 
-First, we receive the existing payload config along with any plugin options.
+| Function                                              | Purpose                                         |
+| ----------------------------------------------------- | ----------------------------------------------- |
+| `getPermissionAccess`                                 | Permission check only                           |
+| `getPermissionAndDataScopeReadAccess`                 | Permission + read `Where` filter                |
+| `getPermissionAndDataScopeMutationAccess`             | Permission + per-document scope (update/delete) |
+| `getSuperAdminAccess`                                 | Super admin only (RBAC collections default)     |
+| `canAccessDocumentByDataScope`                        | Single-document scope check                     |
+| `resolveEffectiveDataScope` / `getDataScopeReadWhere` | Scope resolution & query filters                |
 
-From here, you can extend the config as you wish.
+Constants: `CONSTANTS.ROLE.DATA_SCOPE`, etc.
 
-Finally, you return the config and that is it!
+---
 
-##### Spread Syntax
+## Package exports
 
-Spread syntax (or the spread operator) is a feature in JavaScript that uses the dot notation **(...)** to spread elements from arrays, strings, or objects into various contexts.
+| Import                                      | Contents                              |
+| ------------------------------------------- | ------------------------------------- |
+| `@zealamic/payload-auth-rbac-plugin`        | Plugin + utils + constants            |
+| `@zealamic/payload-auth-rbac-plugin/client` | `RolePermissionMatrixClient`          |
+| `@zealamic/payload-auth-rbac-plugin/types`  | TypeScript types                      |
+| `@zealamic/payload-auth-rbac-plugin/utils`  | Access / field / localization helpers |
 
-We are going to use spread syntax to allow us to add data to existing arrays without losing the existing data. It is crucial to spread the existing data correctly – else this can cause adverse behavior and conflicts with Payload config and other plugins.
+---
 
-Let’s say you want to build a plugin that adds a new collection:
+## License
 
-```ts
-config.collections = [
-  ...(config.collections || []),
-  // Add additional collections here
-]
-```
-
-First we spread the `config.collections` to ensure that we don’t lose the existing collections, then you can add any additional collections just as you would in a regular payload config.
-
-This same logic is applied to other properties like admin, hooks, globals:
-
-```ts
-config.globals = [
-  ...(config.globals || []),
-  // Add additional globals here
-]
-
-config.hooks = {
-  ...(incomingConfig.hooks || {}),
-  // Add additional hooks here
-}
-```
-
-Some properties will be slightly different to extend, for instance the onInit property:
-
-```ts
-import { onInitExtension } from './onInitExtension' // example file
-
-config.onInit = async (payload) => {
-  if (incomingConfig.onInit) await incomingConfig.onInit(payload)
-  // Add additional onInit code by defining an onInitExtension function
-  onInitExtension(pluginOptions, payload)
-}
-```
-
-If you wish to add to the onInit, you must include the **async/await**. We don’t use spread syntax in this case, instead you must await the existing `onInit` before running additional functionality.
-
-In the template, we have stubbed out some addition `onInit` actions that seeds in a document to the `plugin-collection`, you can use this as a base point to add more actions - and if not needed, feel free to delete it.
-
-##### Types.ts
-
-If your plugin has options, you should define and provide types for these options.
-
-```ts
-export type MyPluginConfig = {
-  /**
-   * List of collections to add a custom field
-   */
-  collections?: Partial<Record<CollectionSlug, true>>
-  /**
-   * Disable the plugin
-   */
-  disabled?: boolean
-}
-```
-
-If possible, include JSDoc comments to describe the options and their types. This allows a developer to see details about the options in their editor.
-
-##### Testing
-
-Having a test suite for your plugin is essential to ensure quality and stability. **Vitest** is a fast, modern testing framework that works seamlessly with Vite and supports TypeScript out of the box.
-
-Vitest organizes tests into test suites and cases, similar to other testing frameworks. We recommend creating individual tests based on the expected behavior of your plugin from start to finish.
-
-Writing tests with Vitest is very straightforward, and you can learn more about how it works in the [Vitest documentation.](https://vitest.dev/)
-
-For this template, we stubbed out `int.spec.ts` in the `dev` folder where you can write your tests.
-
-```ts
-describe('Plugin tests', () => {
-  // Create tests to ensure expected behavior from the plugin
-  it('some condition that must be met', () => {
-   // Write your test logic here
-   expect(...)
-  })
-})
-```
-
-## Best practices
-
-With this tutorial and the plugin template, you should have everything you need to start building your own plugin.
-In addition to the setup, here are other best practices aim we follow:
-
-- **Providing an enable / disable option:** For a better user experience, provide a way to disable the plugin without uninstalling it. This is especially important if your plugin adds additional webpack aliases, this will allow you to still let the webpack run to prevent errors.
-- **Include tests in your GitHub CI workflow**: If you’ve configured tests for your package, integrate them into your workflow to run the tests each time you commit to the plugin repository. Learn more about [how to configure tests into your GitHub CI workflow.](https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs)
-- **Publish your finished plugin to NPM**: The best way to share and allow others to use your plugin once it is complete is to publish an NPM package. This process is straightforward and well documented, find out more [creating and publishing a NPM package here.](https://docs.npmjs.com/creating-and-publishing-scoped-public-packages/).
-- **Add payload-plugin topic tag**: Apply the tag **payload-plugin **to your GitHub repository. This will boost the visibility of your plugin and ensure it gets listed with [existing payload plugins](https://github.com/topics/payload-plugin).
-- **Use [Semantic Versioning](https://semver.org/) (SemVar)** - With the SemVar system you release version numbers that reflect the nature of changes (major, minor, patch). Ensure all major versions reference their Payload compatibility.
-
-# Questions
-
-Please contact [Payload](mailto:dev@payloadcms.com) with any questions about using this plugin template.
+MIT

@@ -31,7 +31,8 @@
   "main": "./src/index.ts",
   "types": "./src/general.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "docs/cover-photo.jpg"
   ],
   "scripts": {
     "build": "pnpm copyfiles && pnpm build:types && pnpm build:swc",

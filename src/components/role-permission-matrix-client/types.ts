@@ -1,22 +1,22 @@
 export type RolePermissionMatrixClientTranslations = {
   [locale: string]: {
     viewInUpdateScreenOnly?: {
-      label?: string;
-      placeholder?: string;
-    };
+      label?: string
+      placeholder?: string
+    }
     loading?: {
-      placeholder?: string;
-    };
-    title?: string;
+      placeholder?: string
+    }
+    title?: string
     features?:
       | {
-          label?: string;
+          label?: string
         }
-      | Record<string, string>;
+      | Record<string, string>
     actions?:
       | {
-          label?: string;
+          label?: string
         }
-      | Record<string, string>;
-  };
-};
+      | Record<string, string>
+  }
+}

@@ -67,6 +67,13 @@ export const modifyUsersCollection = (params: UsersModificationParams = {}) => {
   return (incomingConfig: Config): Config => {
     const config = { ...incomingConfig };
     const userSlug = config.admin?.user || "users";
+
+    const customAdmin = {
+      defaultColumns: ["email", "roles", "isSuperAdmin", "updatedAt"],
+      useAsTitle: "email",
+      ...config.admin,
+    };
+
     const pluginFields = getArrayOfMergedFieldAffectingData({
       defaultFields: buildDefaultFields(translations),
       fields: customFields,
@@ -142,6 +149,7 @@ export const modifyUsersCollection = (params: UsersModificationParams = {}) => {
         {
           slug: userSlug,
           auth: true,
+          admin: customAdmin,
           fields: pluginFields,
           access: defaultAccess,
           hooks: mergeUserCollectionHooks({ userSlug }),

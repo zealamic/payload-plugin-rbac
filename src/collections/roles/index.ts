@@ -6,6 +6,7 @@ import {
   toLocaleRecord,
   toSelectPlaceholder,
 } from "../../lib/utils/index.js";
+import { syncPermissionMatrixDraftAfterChange } from "./hooks/sync-permission-matrix-draft.js";
 import type { RolesCollectionParams } from "./types.js";
 
 export const getRolesCollection = (params: RolesCollectionParams) => {
@@ -50,6 +51,9 @@ export const getRolesCollection = (params: RolesCollectionParams) => {
         return getSuperAdminAccess({ req });
       },
       ...access,
+    },
+    hooks: {
+      afterChange: [syncPermissionMatrixDraftAfterChange],
     },
     fields: getArrayOfMergedFieldAffectingData({
       fields,
@@ -150,15 +154,16 @@ export const getRolesCollection = (params: RolesCollectionParams) => {
           },
         },
         {
-          name: "permissionMatrix",
-          type: "ui",
+          name: "permissionMatrixDraft",
+          type: "json",
           label: toLocaleRecord(
             arrTranslationsKeys,
             (locale) => translations[locale]?.fields?.permissionMatrix?.label,
           ),
           admin: {
             components: {
-              Field: "payload-auth-rbac-plugin/client#RolePermissionMatrixClient",
+              Field:
+                "payload-auth-rbac-plugin/client#RolePermissionMatrixClient",
             },
             condition: ((_, __, { operation }) =>
               operation === "update") satisfies Condition,

@@ -1,4 +1,4 @@
-import type { RolesCollectionTranslations } from "./types.js";
+import type { RolesCollectionTranslations } from "./types.js"
 
 export const rolesDefaultTranslations: RolesCollectionTranslations = {
   en: {
@@ -41,4 +41,4 @@ export const rolesDefaultTranslations: RolesCollectionTranslations = {
       },
     },
   },
-};
+}

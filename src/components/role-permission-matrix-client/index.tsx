@@ -6,7 +6,7 @@ import {
   useField,
   useTranslation,
 } from "@payloadcms/ui";
-import { Fragment, useEffect, useId, useMemo, useState } from "react";
+import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
 import type { PermissionAction } from "../../collections/permission-actions/types.js";
 import type { PermissionFeature } from "../../collections/permission-features/types.js";
 import type { Permission } from "../../collections/permissions/types.js";
@@ -18,11 +18,18 @@ import {
 } from "../../lib/constants/permission-action.js";
 import { STATUS as PERMISSION_FEATURE_STATUS } from "../../lib/constants/permission-feature.js";
 import { toID } from "../../lib/utils/data.js";
+
+type ApiListResponse<T> = {
+  docs?: T[];
+};
+
 export const RolePermissionMatrixClient = () => {
   const checkboxId = useId();
   const { config } = useConfig();
   const { hasSavePermission, id } = useDocumentInfo();
-  const { setValue, value } = useField<Record<string, boolean> | null>();
+  const { setValue, value } = useField<Record<string, boolean> | null>({
+    path: "permissionMatrixDraft",
+  });
   const isReadOnly = !hasSavePermission;
 
   const [features, setFeatures] = useState<PermissionFeature[]>([]);
@@ -31,6 +38,7 @@ export const RolePermissionMatrixClient = () => {
   const [rolePermissions, setRolePermissions] = useState<RolePermission[]>([]);
   const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
+  const seededForRoleIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const run = async () => {
@@ -42,21 +50,15 @@ export const RolePermissionMatrixClient = () => {
           await Promise.all([
             fetch(
               `${base}/permission-features?limit=0&depth=0&where[status][equals]=${PERMISSION_FEATURE_STATUS.ACTIVE}`,
-              {
-                credentials: "include",
-              },
+              { credentials: "include" },
             ),
             fetch(
               `${base}/permission-actions?limit=0&depth=0&where[status][equals]=${PERMISSION_ACTION_STATUS.ACTIVE}`,
-              {
-                credentials: "include",
-              },
+              { credentials: "include" },
             ),
             fetch(
               `${base}/permissions?limit=0&depth=1&where[status][equals]=${PERMISSION_STATUS.ACTIVE}`,
-              {
-                credentials: "include",
-              },
+              { credentials: "include" },
             ),
             id
               ? fetch(
@@ -76,6 +78,7 @@ export const RolePermissionMatrixClient = () => {
           (await permissionsRes.json()) as ApiListResponse<Permission>;
         const rolePermissionsJson =
           (await rolePermissionsRes.json()) as ApiListResponse<RolePermission>;
+
         setFeatures(
           featuresJson.docs?.sort(
             (a, b) => (a?.sortOrder ?? 0) - (b?.sortOrder ?? 0),
@@ -105,26 +108,44 @@ export const RolePermissionMatrixClient = () => {
   }, [rolePermissions]);
 
   const draftValue = (
-    value && typeof value === "object" ? value : {}
+    value && typeof value === "object" && !Array.isArray(value) ? value : {}
   ) as Record<string, boolean>;
 
-  // Seed field value from persisted role-permissions one time for this form session.
   useEffect(() => {
-    if (!rolePermissions.length) {
-      return;
-    }
-    if (Object.keys(draftValue).length > 0) {
+    if (!id || loading) {
       return;
     }
 
-    const seeded: Record<string, boolean> = {};
+    const roleId = String(id);
+    if (seededForRoleIdRef.current === roleId) {
+      return;
+    }
+
+    const fromRolesPermissions: Record<string, boolean> = {};
     for (const [permissionID, enabled] of enabledByPermissionID.entries()) {
       if (permissionID) {
-        seeded[permissionID] = enabled;
+        fromRolesPermissions[permissionID] = enabled;
       }
     }
-    setValue(seeded);
-  }, [draftValue, enabledByPermissionID, rolePermissions.length, setValue]);
+
+    const fromDocument =
+      value && typeof value === "object" && !Array.isArray(value)
+        ? (value as Record<string, boolean>)
+        : {};
+
+    const hasRolesPermissions = Object.keys(fromRolesPermissions).length > 0;
+    const hasDocumentDraft = Object.keys(fromDocument).length > 0;
+
+    if (!hasRolesPermissions && !hasDocumentDraft) {
+      return;
+    }
+
+    seededForRoleIdRef.current = roleId;
+    setValue({
+      ...fromRolesPermissions,
+      ...fromDocument,
+    });
+  }, [enabledByPermissionID, id, loading, setValue, value]);
 
   if (!id) {
     return (
@@ -208,6 +229,7 @@ export const RolePermissionMatrixClient = () => {
                   ),
               );
               const isSubActionInPermission = subActions.length > 0;
+
               return (
                 <Fragment key={String(feature.id)}>
                   <tr>

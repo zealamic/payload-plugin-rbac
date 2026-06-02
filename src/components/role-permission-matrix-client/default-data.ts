@@ -1,4 +1,4 @@
-import type { RolePermissionMatrixClientTranslations } from "./types.js";
+import type { RolePermissionMatrixClientTranslations } from "./types.js"
 
 export const rolePermissionMatrixClientDefaultTranslations: RolePermissionMatrixClientTranslations =
   {
@@ -21,4 +21,4 @@ export const rolePermissionMatrixClientDefaultTranslations: RolePermissionMatrix
         delete: "Delete",
       },
     },
-  };
+  }
