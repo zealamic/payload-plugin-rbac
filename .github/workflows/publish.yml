@@ -3,6 +3,7 @@ name: Publish Package to npm
 on:
   release:
     types: [created]
+
 permissions:
   id-token: write
   contents: read
@@ -21,7 +22,9 @@ jobs:
           registry-url: "https://registry.npmjs.org"
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile --production=false
+        run: yarn install --frozen-lockfile
+        env:
+          NODE_ENV: development 
 
       - name: Build project
         run: yarn build
