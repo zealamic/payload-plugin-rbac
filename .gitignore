@@ -9,6 +9,8 @@
 /.idea/*
 !/.idea/runConfigurations
 
+# dist
+/dist
 # testing
 /coverage
 
