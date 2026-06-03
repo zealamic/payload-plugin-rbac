@@ -4,6 +4,14 @@
   "description": "A plugin for Payload CMS to manage authentication and authorization",
   "license": "MIT",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zealamic/payload-auth-rbac-plugin.git"
+  },
+  "bugs": {
+    "url": "https://github.com/zealamic/payload-auth-rbac-plugin/issues"
+  },
+  "homepage": "https://github.com/zealamic/payload-auth-rbac-plugin#readme",
   "keywords": [
     "payload",
     "plugin",
@@ -41,7 +49,7 @@
     "docs/cover-photo.jpg"
   ],
   "scripts": {
-    "build": "yarn copyfiles && yarn build:types && yarn build:swc",
+    "build": "yarn copyfiles && yarn build:types && yarn build:swc && node -e \"fs.cpSync('docs', 'dist/docs', {recursive: true})\"",
     "build:swc": "swc ./src -d ./dist --config-file .swcrc --strip-leading-paths",
     "build:types": "tsc --outDir dist --rootDir ./src",
     "clean": "rimraf {dist,*.tsbuildinfo}",
