@@ -28,4 +28,12 @@ jobs:
         run: yarn build
 
       - name: Publish to npm
-        run: npm publish
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [[ "$VERSION" =~ .*(alpha|beta|rc).* ]]; then
+            echo "Publishing a prerelease version with tag beta..."
+            npm publish --tag beta
+          else
+            echo "Publishing a stable version..."
+            npm publish
+          fi
