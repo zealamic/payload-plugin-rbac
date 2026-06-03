@@ -49,7 +49,7 @@
     "docs/cover-photo.jpg"
   ],
   "scripts": {
-    "build": "yarn copyfiles && yarn build:types && yarn build:swc && node -e \"fs.cpSync('docs', 'dist/docs', {recursive: true})\"",
+    "build": "yarn copyfiles && yarn build:types && yarn build:swc",
     "build:swc": "swc ./src -d ./dist --config-file .swcrc --strip-leading-paths",
     "build:types": "tsc --outDir dist --rootDir ./src",
     "clean": "rimraf {dist,*.tsbuildinfo}",
