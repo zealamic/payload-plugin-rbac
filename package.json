@@ -1,6 +1,6 @@
 {
   "name": "@zealamic/payload-auth-rbac-plugin",
-  "version": "1.0.0",
+  "version": "1.0.0-beta.1",
   "description": "A plugin for Payload CMS to manage authentication and authorization",
   "license": "MIT",
   "type": "module",
@@ -91,25 +91,31 @@
     "node": "^18.20.2 || >=20.9.0"
   },
   "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
     "exports": {
       ".": {
-        "default": "./src/index.ts"
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
       },
       "./client": {
-        "default": "./src/exports/client.ts"
+        "types": "./dist/exports/client.d.ts",
+        "default": "./dist/exports/client.js"
       },
       "./rsc": {
-        "default": "./src/exports/rsc.ts"
+        "types": "./dist/exports/rsc.d.ts",
+        "default": "./dist/exports/rsc.js"
       },
       "./types": {
-        "default": "./src/types.ts"
+        "types": "./dist/types.d.ts",
+        "default": "./dist/types.js"
       },
       "./utils": {
-        "default": "./src/lib/utils/index.ts"
+        "types": "./dist/lib/utils/index.d.ts",
+        "default": "./dist/lib/utils/index.js"
       }
-    },
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts"
+    }
   },
   "registry": "https://registry.npmjs.org/",
   "dependencies": {}
