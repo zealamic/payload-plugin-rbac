@@ -9,7 +9,13 @@
     "plugin",
     "rbac",
     "authentication",
-    "authorization"
+    "authorization",
+    "payloadcms",
+    "payload-plugin",
+    "payload-rbac",
+    "payload-auth",
+    "payload-auth-rbac",
+    "payload-auth-rbac-plugin"
   ],
   "exports": {
     ".": {
