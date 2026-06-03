@@ -35,7 +35,7 @@
     "docs/cover-photo.jpg"
   ],
   "scripts": {
-    "build": "pnpm copyfiles && pnpm build:types && pnpm build:swc",
+    "build": "yarn copyfiles && yarn build:types && yarn build:swc",
     "build:swc": "swc ./src -d ./dist --config-file .swcrc --strip-leading-paths",
     "build:types": "tsc --outDir dist --rootDir ./src",
     "clean": "rimraf {dist,*.tsbuildinfo}",
@@ -48,7 +48,7 @@
     "generate:types": "yarn dev:generate-types",
     "lint": "biome check",
     "lint:fix": "biome check --write",
-    "test": "pnpm test:int && pnpm test:e2e",
+    "test": "yarn test:int && yarn test:e2e",
     "test:e2e": "playwright test",
     "test:int": "vitest"
   },
