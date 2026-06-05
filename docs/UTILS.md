@@ -28,9 +28,9 @@ Export sources:
 
 ```ts
 type DataScopeOptions = {
-  createdByField?: string // default: "createdBy"
-  usersCollectionSlug?: string // default: "users"
-}
+  createdByField?: string; // default: "createdBy"
+  usersCollectionSlug?: string; // default: "users"
+};
 ```
 
 Use this to configure ownership field and users slug for hierarchy logic.
@@ -66,7 +66,7 @@ What it returns:
 create: getPermissionAccess({
   featureCode: "posts",
   actionCode: "create",
-})
+});
 
 // 2) read + scope (read mode inferred when options exists)
 read: getPermissionAccess({
@@ -76,7 +76,7 @@ read: getPermissionAccess({
     createdByField: "createdBy",
     usersCollectionSlug: "users",
   },
-})
+});
 
 // 3) update/delete + document scope (requires mode + collectionSlug)
 update: getPermissionAccess({
@@ -85,7 +85,7 @@ update: getPermissionAccess({
   mode: "modify",
   collectionSlug: "posts",
   options: { createdByField: "createdBy" },
-})
+});
 ```
 
 How it works internally:
@@ -143,8 +143,13 @@ Low-level per-document RBAC + data-scope check.
 Merge existing `where` with scope constraints.
 
 ```ts
-const scopeWhere = await getDataScopeReadWhere(req, { createdByField: "createdBy" })
-const where = mergeDataScopeWhere({ status: { equals: "published" } }, scopeWhere)
+const scopeWhere = await getDataScopeReadWhere(req, {
+  createdByField: "createdBy",
+});
+const where = mergeDataScopeWhere(
+  { status: { equals: "published" } },
+  scopeWhere,
+);
 ```
 
 ---
@@ -156,9 +161,9 @@ const where = mergeDataScopeWhere({ status: { equals: "published" } }, scopeWher
 Normalize relationship/id values to string id.
 
 ```ts
-toID("507f1f77bcf86cd799439011") // "507f1f77bcf86cd799439011"
-toID({ id: "507f1f77bcf86cd799439011" }) // "507f1f77bcf86cd799439011"
-toID(undefined) // ""
+toID("507f1f77bcf86cd799439011"); // "507f1f77bcf86cd799439011"
+toID({ id: "507f1f77bcf86cd799439011" }); // "507f1f77bcf86cd799439011"
+toID(undefined); // ""
 ```
 
 ---
@@ -203,19 +208,19 @@ Extract nested translation branch by path (example: `"collections.roles"`).
 Not from `lib/utils`, but often used with access helpers:
 
 ```ts
-import { CONSTANTS } from "@zealamic/payload-auth-rbac-plugin"
+import { CONSTANTS } from "@zealamic/payload-auth-rbac-plugin";
 
-CONSTANTS.ROLE.DATA_SCOPE
-CONSTANTS.ROLE.STATUS
-CONSTANTS.PERMISSION.STATUS
-CONSTANTS.PERMISSION_ACTION.TYPE
-CONSTANTS.USER.PARENT_PATH_SEPARATOR
+CONSTANTS.ROLE.DATA_SCOPE;
+CONSTANTS.ROLE.STATUS;
+CONSTANTS.PERMISSION.STATUS;
+CONSTANTS.PERMISSION_ACTION.TYPE;
+CONSTANTS.USER.PARENT_PATH_SEPARATOR;
 ```
 
 ---
 
 ## Related docs
 
-- [README](../README.md) — install and quick start
-- [COLLECTIONS](./COLLECTIONS.md) — collection schemas and customization
-- [TRANSLATIONS](./TRANSLATIONS.md) — i18n keys
+- [README](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/README.md) — install and quick start
+- [COLLECTIONS](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/COLLECTIONS.md) — collection schemas and customization
+- [TRANSLATIONS](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/TRANSLATIONS.md) — i18n keys

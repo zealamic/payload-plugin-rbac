@@ -457,6 +457,6 @@ Shipped defaults (override via `translations.en`):
 
 ## Related docs
 
-- [README](../README.md) — install and quick start
-- [COLLECTIONS](./COLLECTIONS.md) — collection schemas and customization
-- [UTILS](./UTILS.md) — access helpers
+- [README](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/README.md) — install and quick start
+- [COLLECTIONS](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/COLLECTIONS.md) — collection schemas and customization
+- [UTILS](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/UTILS.md) — access helpers
