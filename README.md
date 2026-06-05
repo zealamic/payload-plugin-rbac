@@ -1,4 +1,4 @@
-# @zealamic/payload-auth-rbac-plugin
+# @zealamic/payload-plugin-rbac
 
 Centralized **role-based access control (RBAC)** for [Payload CMS](https://payloadcms.com) **v3**.
 
@@ -37,8 +37,8 @@ Demo: `dev/rbac.ts`, `dev/collections/posts.ts`.
 ## Installation
 
 ```bash
-npm install @zealamic/payload-auth-rbac-plugin
-# or: yarn add / pnpm add @zealamic/payload-auth-rbac-plugin
+npm install @zealamic/payload-plugin-rbac
+# or: yarn add / pnpm add @zealamic/payload-plugin-rbac
 ```
 
 ---
@@ -48,7 +48,7 @@ npm install @zealamic/payload-auth-rbac-plugin
 ### 1. Register the plugin
 
 ```ts
-import { payloadAuthRbacPlugin } from "@zealamic/payload-auth-rbac-plugin";
+import { payloadAuthRbacPlugin } from "@zealamic/payload-plugin-rbac";
 
 export default buildConfig({
   plugins: [
@@ -89,7 +89,7 @@ Then apply the migration with `migrate` (or your project's usual migration workf
 ### 4. Protect app collections
 
 ```ts
-import { getPermissionAccess } from "@zealamic/payload-auth-rbac-plugin";
+import { getPermissionAccess } from "@zealamic/payload-plugin-rbac";
 
 export const Posts: CollectionConfig = {
   slug: "posts",
@@ -147,7 +147,7 @@ export const Posts: CollectionConfig = {
 | `translations`              | —       | Admin / matrix i18n → **[TRANSLATIONS](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/TRANSLATIONS.md)**                            |
 | `collections`               | —       | Per-collection overrides → **[COLLECTIONS](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/COLLECTIONS.md#customizing-collections)** |
 
-Types: `@zealamic/payload-auth-rbac-plugin/types`
+Types: `@zealamic/payload-plugin-rbac/types`
 
 ---
 
@@ -170,10 +170,10 @@ Constants: `CONSTANTS.ROLE.DATA_SCOPE`, etc.
 
 | Import                                      | Contents                              |
 | ------------------------------------------- | ------------------------------------- |
-| `@zealamic/payload-auth-rbac-plugin`        | Plugin + utils + constants            |
-| `@zealamic/payload-auth-rbac-plugin/client` | `RolePermissionMatrixClient`          |
-| `@zealamic/payload-auth-rbac-plugin/types`  | TypeScript types                      |
-| `@zealamic/payload-auth-rbac-plugin/utils`  | Access / field / localization helpers |
+| `@zealamic/payload-plugin-rbac`        | Plugin + utils + constants            |
+| `@zealamic/payload-plugin-rbac/client` | `RolePermissionMatrixClient`          |
+| `@zealamic/payload-plugin-rbac/types`  | TypeScript types                      |
+| `@zealamic/payload-plugin-rbac/utils`  | Access / field / localization helpers |
 
 ---
 

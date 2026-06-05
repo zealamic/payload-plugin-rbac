@@ -3,8 +3,8 @@
 Customize Admin labels, placeholders, select options, and permission-matrix UI text via the plugin `translations` option.
 
 ```ts
-import type { RBACTranslations } from "@zealamic/payload-auth-rbac-plugin/types";
-import { payloadAuthRbacPlugin } from "@zealamic/payload-auth-rbac-plugin";
+import type { RBACTranslations } from "@zealamic/payload-plugin-rbac/types";
+import { payloadAuthRbacPlugin } from "@zealamic/payload-plugin-rbac";
 
 export default buildConfig({
   i18n: {
@@ -423,11 +423,11 @@ Working demo: `dev/rbac.ts`.
 ## TypeScript
 
 ```ts
-import type { RBACTranslations } from "@zealamic/payload-auth-rbac-plugin/types";
+import type { RBACTranslations } from "@zealamic/payload-plugin-rbac/types";
 
 // Per-collection types (value for one locale):
-import type { RolesCollectionTranslations } from "@zealamic/payload-auth-rbac-plugin/types";
-import type { RolePermissionMatrixClientTranslations } from "@zealamic/payload-auth-rbac-plugin/types";
+import type { RolesCollectionTranslations } from "@zealamic/payload-plugin-rbac/types";
+import type { RolePermissionMatrixClientTranslations } from "@zealamic/payload-plugin-rbac/types";
 ```
 
 ---

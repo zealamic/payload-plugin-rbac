@@ -213,7 +213,7 @@ Pass overrides under `collections` in plugin config:
 import {
   getPermissionAccess,
   payloadAuthRbacPlugin,
-} from "@zealamic/payload-auth-rbac-plugin";
+} from "@zealamic/payload-plugin-rbac";
 
 export default buildConfig({
   plugins: [

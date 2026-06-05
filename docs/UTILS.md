@@ -4,8 +4,8 @@ This document lists only utilities that are currently exported.
 
 Export sources:
 
-- `@zealamic/payload-auth-rbac-plugin`
-- `@zealamic/payload-auth-rbac-plugin/utils`
+- `@zealamic/payload-plugin-rbac`
+- `@zealamic/payload-plugin-rbac/utils`
 
 > Barrel file: `src/lib/utils/index.ts`
 
@@ -208,7 +208,7 @@ Extract nested translation branch by path (example: `"collections.roles"`).
 Not from `lib/utils`, but often used with access helpers:
 
 ```ts
-import { CONSTANTS } from "@zealamic/payload-auth-rbac-plugin";
+import { CONSTANTS } from "@zealamic/payload-plugin-rbac";
 
 CONSTANTS.ROLE.DATA_SCOPE;
 CONSTANTS.ROLE.STATUS;
