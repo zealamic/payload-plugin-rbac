@@ -1,4 +1,4 @@
-import type { Config, Field, PayloadRequest } from "payload";
+import type { Config, Field } from "payload";
 import {
   getArrayOfMergedFieldAffectingData,
   getPermissionAccess,
@@ -12,6 +12,7 @@ import type {
 
 const buildDefaultFields = (
   translations: UsersModificationTranslations,
+  userSlug: string,
 ): Field[] => {
   const locales = Object.keys(translations);
   return [
@@ -40,7 +41,8 @@ const buildDefaultFields = (
     {
       name: "parent",
       type: "relationship",
-      relationTo: "users",
+      relationTo: userSlug,
+      hasMany: false,
       label: toLocaleRecord(
         locales,
         (locale) => translations[locale]?.fields?.parent?.label,
@@ -69,17 +71,17 @@ export const modifyUsersCollection = (params: UsersModificationParams = {}) => {
     const customAdmin = {
       defaultColumns: ["email", "roles", "isSuperAdmin", "updatedAt"],
       useAsTitle: "email",
-      ...config.admin,
     };
 
     const pluginFields = getArrayOfMergedFieldAffectingData({
-      defaultFields: buildDefaultFields(translations),
+      defaultFields: buildDefaultFields(translations, userSlug),
       fields: customFields,
     });
 
     const existing = (config.collections || []).find(
       (c) => c.slug === userSlug,
     );
+
     const dataScopeOptions = {
       createdByField: "id",
       usersCollectionSlug: userSlug,
@@ -118,9 +120,12 @@ export const modifyUsersCollection = (params: UsersModificationParams = {}) => {
         }
         return {
           ...collection,
-          fields: [...collection.fields, ...pluginFields],
+          fields: [...pluginFields, ...collection.fields],
           access: {
-            ...defaultAccess,
+            create: collection.access?.create ?? defaultAccess.create,
+            read: collection.access?.read ?? defaultAccess.read,
+            update: collection.access?.update ?? defaultAccess.update,
+            delete: collection.access?.delete ?? defaultAccess.delete,
             ...collection.access,
           },
           hooks: mergeUserCollectionHooks({
