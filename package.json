@@ -47,7 +47,8 @@
   "files": [
     "dist",
     "docs",
-    "assets"
+    "assets",
+    "src"
   ],
   "scripts": {
     "copy:styles": "node -e \"require('fs').cpSync('src/styles', 'dist/styles', {recursive:true})\"",
@@ -108,31 +109,7 @@
     "node": "^18.20.2 || >=20.9.0"
   },
   "publishConfig": {
-    "access": "public",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
-    "exports": {
-      ".": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
-      },
-      "./client": {
-        "types": "./dist/exports/client.d.ts",
-        "default": "./dist/exports/client.js"
-      },
-      "./rsc": {
-        "types": "./dist/exports/rsc.d.ts",
-        "default": "./dist/exports/rsc.js"
-      },
-      "./types": {
-        "types": "./dist/types.d.ts",
-        "default": "./dist/types.js"
-      },
-      "./utils": {
-        "types": "./dist/lib/utils/index.d.ts",
-        "default": "./dist/lib/utils/index.js"
-      }
-    }
+    "access": "public"
   },
   "registry": "https://registry.npmjs.org/",
   "dependencies": {}

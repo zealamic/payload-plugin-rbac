@@ -225,9 +225,9 @@ Registered as Payload i18n keys: `components:rolePermissionMatrix:…`
 | `title`                        | Matrix heading                                                  |
 | `viewInUpdateScreenOnly.label` | Shown on create screen                                          |
 | `loading.placeholder`          | Loading state                                                   |
-| `features.label`               | Features column header                                          |
+| `featuresLabel`                | Features column header                                          |
 | `features.{code}`              | Label for main feature with matching `permission-features.code` |
-| `actions.label`                | Actions column header                                           |
+| `actionsLabel`                 | Actions column header                                           |
 | `actions.{code}`               | Label for main action with matching `permission-actions.code`   |
 
 ### Features (dynamic)
@@ -248,6 +248,8 @@ payloadAuthRbacPlugin({
     en: {
       components: {
         rolePermissionMatrix: {
+          // ... others
+          featuresLabel: "Features",
           features: {
             label: "Features",
             users: "Users", // permission-features.code = "users" (plugin default)
@@ -278,8 +280,9 @@ payloadAuthRbacPlugin({
     en: {
       components: {
         rolePermissionMatrix: {
+          // ... others
+          actionsLabel: "Actions",
           actions: {
-            label: "Actions",
             create: "Create", // permission-actions.code = "create" (plugin default)
             read: "Read",
             update: "Update",
@@ -392,13 +395,17 @@ export default buildConfig({
             rolePermissionMatrix: {
               title: "Ma trận quyền",
               loading: { placeholder: "Đang tải..." },
-              features: { label: "Tính năng" },
+              featuresLabel: "Tính năng",
+              features: {
+                // Mã tính năng của permission-features
+              },
+              actionsLabel: "Hành động",
               actions: {
-                label: "Hành động",
                 create: "Tạo",
                 read: "Xem",
                 update: "Sửa",
                 delete: "Xóa",
+                // Mã hành đông của permission-features
               },
             },
           },
