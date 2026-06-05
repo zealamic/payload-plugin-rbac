@@ -27,7 +27,7 @@ Demo: `dev/rbac.ts`, `dev/collections/posts.ts`.
 - **Five RBAC collections** — features, actions, permissions, roles, join table ([details](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/COLLECTIONS.md))
 - **Multi-role users** — union of enabled grants across assigned roles
 - **Granular permissions** — any `featureCode` + `actionCode` pair ([helpers](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/UTILS.md))
-- **Data scope** — per-role `own` / `hierarchy` / `all` for row-level filtering (`[dataScope` vs `isSuperAdmin](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/COLLECTIONS.md#what-is-datascope)`)
+- **Data scope** — per-role `own` / `hierarchy` / `all` for row-level filtering ([`dataScope` vs `isSuperAdmin`](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/COLLECTIONS.md#what-is-datascope)`)
 - **Permission matrix** — role edit UI; syncs to `roles-permissions` on save
 - **TypeScript** — typed plugin options and exports (`/types`)
 - **i18n** — plugin-owned translations merged into Payload i18n ([guide](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/TRANSLATIONS.md))
@@ -66,8 +66,8 @@ export default buildConfig({
 1. **permission-features** — e.g. `posts`, `users` (`code` = `featureCode` in access helpers)
 2. **permission-actions** — e.g. `create`, `read`, `update`, `delete`
 3. **permissions** — one row per feature + action pair
-4. **roles** — set `[dataScope](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/COLLECTIONS.md#what-is-datascope)`; configure matrix on update screen → Save
-5. **users** — assign roles; bootstrap `[isSuperAdmin](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/COLLECTIONS.md#bootstrap-super-admin)` via seed/API
+4. **roles** — set [dataScope](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/COLLECTIONS.md#what-is-datascope); configure matrix on update screen → Save
+5. **users** — assign roles; bootstrap [isSuperAdmin](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/COLLECTIONS.md#bootstrap-super-admin) via seed/API
 
 → Full collection reference: **[COLLECTIONS](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/COLLECTIONS.md)**
 
