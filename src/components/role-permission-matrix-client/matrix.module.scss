@@ -1,6 +1,6 @@
 // Import Payload compile-time SCSS vars ($breakpoint-s-width, etc.).
 // Note: @payloadcms/ui/scss/vars is not a published export — use dist/scss/vars.
-@use "../../../node_modules/@payloadcms/ui/dist/scss/vars" as payload-vars;
+// @use "../../../node_modules/@payloadcms/ui/dist/scss/vars" as payload-vars;
 @use "../../styles/variables" as rbac-vars;
 
 $local-prefix: rbac-vars.$rbac-prefix;
@@ -26,9 +26,6 @@ $local-prefix: rbac-vars.$rbac-prefix;
   &-container {
     border-radius: var(--style-radius-m);
     border: 1px solid var(--theme-border-color);
-    @media only screen and (min-width: payload-vars.$breakpoint-s-width) {
-      border-radius: var(--style-radius-l);
-    }
   }
   &-th {
     &-feature {

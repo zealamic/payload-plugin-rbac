@@ -10,12 +10,12 @@ export const rolePermissionMatrixClientDefaultTranslations: RolePermissionMatrix
         placeholder: "Loading permission matrix...",
       },
       title: "Permission Matrix",
+      featuresLabel: "Features",
       features: {
-        label: "Features",
         users: "Users",
       },
+      actionsLabel: "Actions",
       actions: {
-        label: "Actions",
         create: "Create",
         read: "Read",
         update: "Update",

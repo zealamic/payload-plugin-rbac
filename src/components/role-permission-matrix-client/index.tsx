@@ -187,7 +187,7 @@ export const RolePermissionMatrixClient = () => {
             <tr>
               <th className={styles[`${RBAC_PREFIX}-table-th-feature`]}>
                 {t(
-                  `components:rolePermissionMatrix:features:label` as Parameters<
+                  `components:rolePermissionMatrix:featuresLabel` as Parameters<
                     typeof t
                   >[0],
                 )}
@@ -199,7 +199,7 @@ export const RolePermissionMatrixClient = () => {
                 }
               >
                 {t(
-                  `components:rolePermissionMatrix:actions:label` as Parameters<
+                  `components:rolePermissionMatrix:actionsLabel` as Parameters<
                     typeof t
                   >[0],
                 )}
