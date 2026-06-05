@@ -3,6 +3,16 @@ name: Publish Package to npm
 on:
   release:
     types: [created]
+    on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Reason for running the workflow"
+        required: false
+        default: "Re-building manual"
 
 permissions:
   id-token: write
