@@ -61,7 +61,22 @@ export default buildConfig({
 });
 ```
 
-### 2. Seed RBAC data (Admin or script)
+### 2. Migration
+
+After adding the plugin to `payload.config.ts`, run a Payload migration if your database schema is not up to date:
+
+```bash
+npm run payload migrate:create
+# or: yarn payload migrate:create
+# or: pnpm payload migrate:create
+```
+
+Then apply the migration with `migrate` (or your project's usual migration workflow).
+
+> **Bootstrap a super admin:** RBAC collections are restricted to super admins by default. Set `isSuperAdmin: true` on at least one user (via seed script, Local API, or direct database update) before you can manage roles, permissions, and the permission matrix in Admin.
+> → See [COLLECTIONS — Bootstrap super admin](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/COLLECTIONS.md#bootstrap-super-admin)
+
+### 3. Seed RBAC data (Admin or script)
 
 1. **permission-features** — e.g. `posts`, `users` (`code` = `featureCode` in access helpers)
 2. **permission-actions** — e.g. `create`, `read`, `update`, `delete`
@@ -71,7 +86,7 @@ export default buildConfig({
 
 → Full collection reference: **[COLLECTIONS](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/COLLECTIONS.md)**
 
-### 3. Protect app collections
+### 4. Protect app collections
 
 ```ts
 import { getPermissionAccess } from "@zealamic/payload-auth-rbac-plugin";

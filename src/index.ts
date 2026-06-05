@@ -29,6 +29,7 @@ import type {
 
 export * from "./lib/constants/index.js";
 export * from "./lib/utils/index.js";
+export type * from "./types.js";
 
 export const payloadAuthRbacPlugin =
   (pluginOptions: PayloadAuthRbacPluginConfig) =>

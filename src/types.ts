@@ -17,6 +17,12 @@ export * from "./collections/roles-permissions/types.js";
 export * from "./collections/users/types.js";
 export * from "./components/role-permission-matrix-client/types.js";
 
+export type ItemRef = number | string | { id?: number | string };
+
+export type ApiListResponse<T> = {
+  docs?: T[];
+};
+
 export type RBACTranslations = {
   [locale: string]: {
     // Collections types
