@@ -3,7 +3,6 @@ name: Publish Package to npm
 on:
   release:
     types: [created]
-    on:
   push:
     tags:
       - "v*"
