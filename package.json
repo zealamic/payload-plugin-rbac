@@ -1,17 +1,17 @@
 {
-  "name": "@zealamic/payload-auth-rbac-plugin",
-  "version": "1.0.2",
+  "name": "@zealamic/payload-plugin-rbac",
+  "version": "1.0.3",
   "description": "A plugin for Payload CMS to manage authentication and authorization",
   "license": "MIT",
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zealamic/payload-auth-rbac-plugin.git"
+    "url": "git+https://github.com/zealamic/payload-plugin-rbac.git"
   },
   "bugs": {
-    "url": "https://github.com/zealamic/payload-auth-rbac-plugin/issues"
+    "url": "https://github.com/zealamic/payload-plugin-rbac/issues"
   },
-  "homepage": "https://github.com/zealamic/payload-auth-rbac-plugin#readme",
+  "homepage": "https://github.com/zealamic/payload-plugin-rbac#readme",
   "keywords": [
     "payload",
     "plugin",
@@ -21,9 +21,7 @@
     "payloadcms",
     "payload-plugin",
     "payload-rbac",
-    "payload-auth",
-    "payload-auth-rbac",
-    "payload-auth-rbac-plugin"
+    "payload-plugin-rbac"
   ],
   "exports": {
     ".": {
