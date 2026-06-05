@@ -67,6 +67,13 @@ export const rbacPlugin = payloadAuthRbacPlugin({
           },
         },
       },
+      components: {
+        rolePermissionMatrix: {
+          features: {
+            posts: "Bài viết",
+          },
+        },
+      },
     },
     en: {
       collections: {
@@ -100,6 +107,13 @@ export const rbacPlugin = payloadAuthRbacPlugin({
               activeLabel: "Active",
               inactiveLabel: "Inactive",
             },
+          },
+        },
+      },
+      components: {
+        rolePermissionMatrix: {
+          features: {
+            posts: "Posts",
           },
         },
       },

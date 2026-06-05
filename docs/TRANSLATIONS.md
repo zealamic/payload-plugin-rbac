@@ -14,8 +14,12 @@ export default buildConfig({
   plugins: [
     payloadAuthRbacPlugin({
       translations: {
-        en: { /* partial overrides OK */ },
-        vi: { /* provide full strings for vi */ },
+        en: {
+          /* partial overrides OK */
+        },
+        vi: {
+          /* provide full strings for vi */
+        },
       },
     }),
   ],
@@ -28,9 +32,9 @@ export default buildConfig({
 
 Translations are used in **two places**:
 
-| Layer | What it affects |
-|-------|-----------------|
-| **Collection config** | Sidebar group, collection labels, field labels, placeholders, select option labels |
+| Layer                          | What it affects                                                                      |
+| ------------------------------ | ------------------------------------------------------------------------------------ |
+| **Collection config**          | Sidebar group, collection labels, field labels, placeholders, select option labels   |
 | **`config.i18n.translations`** | Permission matrix UI (`useTranslation` keys under `components.rolePermissionMatrix`) |
 
 **Merge order when the plugin loads:**
@@ -51,9 +55,9 @@ Your project's `config.i18n` still owns:
 
 ### Locale merge behavior
 
-| Locale | Behavior |
-|--------|----------|
-| `en` | Partial overrides OK — missing keys inherit plugin English defaults |
+| Locale            | Behavior                                                                                                     |
+| ----------------- | ------------------------------------------------------------------------------------------------------------ |
+| `en`              | Partial overrides OK — missing keys inherit plugin English defaults                                          |
 | Other (e.g. `vi`) | **No** auto-fill from `en` — provide complete strings for that locale, or rely on Payload `fallbackLanguage` |
 
 ### Serializable values only (Payload 3 / Next.js)
@@ -83,7 +87,7 @@ type RBACTranslations = {
       permissions?: CollectionTranslations;
       roles?: CollectionTranslations;
       rolesPermissions?: CollectionTranslations;
-      users?: UsersFieldTranslations;  // fields only
+      users?: UsersFieldTranslations; // fields only
     };
     components?: {
       rolePermissionMatrix?: MatrixTranslations;
@@ -94,14 +98,14 @@ type RBACTranslations = {
 
 ### Collection config keys (camelCase)
 
-| Config key | Collection slug |
-|------------|-----------------|
-| `permissionActions` | `permission-actions` |
-| `permissionFeatures` | `permission-features` |
-| `permissions` | `permissions` |
-| `roles` | `roles` |
-| `rolesPermissions` | `roles-permissions` |
-| `users` | Your auth collection (plugin-modified) |
+| Config key           | Collection slug                        |
+| -------------------- | -------------------------------------- |
+| `permissionActions`  | `permission-actions`                   |
+| `permissionFeatures` | `permission-features`                  |
+| `permissions`        | `permissions`                          |
+| `roles`              | `roles`                                |
+| `rolesPermissions`   | `roles-permissions`                    |
+| `users`              | Your auth collection (plugin-modified) |
 
 Every collection block supports:
 
@@ -115,9 +119,9 @@ Every collection block supports:
 
 ### Common field keys
 
-| Key | Used on |
-|-----|---------|
-| `label` | All fields |
+| Key           | Used on              |
+| ------------- | -------------------- |
+| `label`       | All fields           |
 | `placeholder` | Text, number, select |
 
 ### Select option labels
@@ -155,56 +159,56 @@ All keys are optional. Defaults live in `src/collections/*/default-data.ts`.
 
 ### `permissionActions`
 
-| Field | Keys |
-|-------|------|
-| `code` | `label`, `placeholder` |
-| `type` | `label`, `placeholder`, `mainLabel`, `subLabel` |
-| `sortOrder` | `label`, `placeholder` |
-| `status` | `label`, `placeholder`, `activeLabel`, `inactiveLabel` |
+| Field       | Keys                                                   |
+| ----------- | ------------------------------------------------------ |
+| `code`      | `label`, `placeholder`                                 |
+| `type`      | `label`, `placeholder`, `mainLabel`, `subLabel`        |
+| `sortOrder` | `label`, `placeholder`                                 |
+| `status`    | `label`, `placeholder`, `activeLabel`, `inactiveLabel` |
 
 ### `permissionFeatures`
 
-| Field | Keys |
-|-------|------|
-| `code` | `label`, `placeholder` |
-| `sortOrder` | `label`, `placeholder` |
-| `status` | `label`, `placeholder`, `activeLabel`, `inactiveLabel` |
+| Field       | Keys                                                   |
+| ----------- | ------------------------------------------------------ |
+| `code`      | `label`, `placeholder`                                 |
+| `sortOrder` | `label`, `placeholder`                                 |
+| `status`    | `label`, `placeholder`, `activeLabel`, `inactiveLabel` |
 
 ### `permissions`
 
-| Field | Keys |
-|-------|------|
-| `name` | `label`, `placeholder` |
-| `permissionFeature` | `label`, `placeholder` |
-| `permissionAction` | `label`, `placeholder` |
-| `sortOrder` | `label`, `placeholder` |
-| `status` | `label`, `placeholder`, `activeLabel`, `inactiveLabel` |
+| Field               | Keys                                                   |
+| ------------------- | ------------------------------------------------------ |
+| `name`              | `label`, `placeholder`                                 |
+| `permissionFeature` | `label`, `placeholder`                                 |
+| `permissionAction`  | `label`, `placeholder`                                 |
+| `sortOrder`         | `label`, `placeholder`                                 |
+| `status`            | `label`, `placeholder`, `activeLabel`, `inactiveLabel` |
 
 ### `roles`
 
-| Field | Keys |
-|-------|------|
-| `code`, `name`, `description` | `label`, `placeholder` |
-| `status` | `label`, `placeholder`, `activeLabel`, `inactiveLabel` |
-| `dataScope` | `label`, `placeholder`, `ownLabel`, `hierarchyLabel`, `allLabel` |
-| `permissionMatrix` | `label`, `placeholder` — **label only** for schema field `permissionMatrixDraft` |
+| Field                         | Keys                                                                             |
+| ----------------------------- | -------------------------------------------------------------------------------- |
+| `code`, `name`, `description` | `label`, `placeholder`                                                           |
+| `status`                      | `label`, `placeholder`, `activeLabel`, `inactiveLabel`                           |
+| `dataScope`                   | `label`, `placeholder`, `ownLabel`, `hierarchyLabel`, `allLabel`                 |
+| `permissionMatrix`            | `label`, `placeholder` — **label only** for schema field `permissionMatrixDraft` |
 
 > **Field name vs translation key:** schema field = `permissionMatrixDraft`; translation key = `permissionMatrix`. For `collections.roles.fields` overrides, use schema name `permissionMatrixDraft`.
 
 ### `rolesPermissions`
 
-| Field | Keys |
-|-------|------|
+| Field                | Keys                   |
+| -------------------- | ---------------------- |
 | `role`, `permission` | `label`, `placeholder` |
-| `enabled` | `label`, `placeholder` |
+| `enabled`            | `label`, `placeholder` |
 
 ### `users` (fields only)
 
-| Field | Keys |
-|-------|------|
-| `isSuperAdmin` | `label` |
-| `roles` | `label`, `placeholder` |
-| `parent` | `label`, `placeholder` |
+| Field          | Keys                   |
+| -------------- | ---------------------- |
+| `isSuperAdmin` | `label`                |
+| `roles`        | `label`, `placeholder` |
+| `parent`       | `label`, `placeholder` |
 
 No collection `labels` — the users collection belongs to your app.
 
@@ -216,39 +220,80 @@ No collection `labels` — the users collection belongs to your app.
 
 Registered as Payload i18n keys: `components:rolePermissionMatrix:…`
 
-| Key | Description |
-|-----|-------------|
-| `title` | Matrix heading |
-| `viewInUpdateScreenOnly.label` | Shown on create screen |
-| `loading.placeholder` | Loading state |
-| `features.label` | Features column header |
-| `actions.label` | Actions column header |
-| `actions.{code}` | Label for main action with matching `permission-actions.code` |
+| Key                            | Description                                                     |
+| ------------------------------ | --------------------------------------------------------------- |
+| `title`                        | Matrix heading                                                  |
+| `viewInUpdateScreenOnly.label` | Shown on create screen                                          |
+| `loading.placeholder`          | Loading state                                                   |
+| `features.label`               | Features column header                                          |
+| `features.{code}`              | Label for main feature with matching `permission-features.code` |
+| `actions.label`                | Actions column header                                           |
+| `actions.{code}`               | Label for main action with matching `permission-actions.code`   |
+
+### Features (dynamic)
+
+The matrix resolves feature row labels via:
+
+```
+components:rolePermissionMatrix:features:{featureCode}
+```
+
+`{featureCode}` must match **`permission-features.code` exactly** (case-sensitive).
+
+Add one key per feature code under `translations.<locale>.components.rolePermissionMatrix.features`:
+
+```ts
+payloadAuthRbacPlugin({
+  translations: {
+    en: {
+      components: {
+        rolePermissionMatrix: {
+          features: {
+            label: "Features",
+            users: "Users", // permission-features.code = "users" (plugin default)
+            posts: "Posts", // permission-features.code = "posts"
+          },
+        },
+      },
+    },
+  },
+});
+```
+
+If a key is missing, the UI falls back to `feature.id` (not `feature.code`).
 
 ### Main action labels (dynamic)
 
-The matrix resolves main action labels via:
+Main actions (`type: "main"`) resolve checkbox labels via:
 
 ```
 components:rolePermissionMatrix:actions:{actionCode}
 ```
 
-Add a key for each main action code:
+`{actionCode}` must match **`permission-actions.code` exactly**.
 
 ```ts
-components: {
-  rolePermissionMatrix: {
-    actions: {
-      label: "Actions",
-      create: "Create",
-      read: "Read",
-      update: "Update",
-      delete: "Delete",
-      publish: "Publish",  // if you have permission-actions.code = "publish"
+payloadAuthRbacPlugin({
+  translations: {
+    en: {
+      components: {
+        rolePermissionMatrix: {
+          actions: {
+            label: "Actions",
+            create: "Create", // permission-actions.code = "create" (plugin default)
+            read: "Read",
+            update: "Update",
+            delete: "Delete",
+            publish: "Publish", // permission-actions.code = "publish" (custom)
+          },
+        },
+      },
     },
   },
-},
+});
 ```
+
+If a key is missing, the UI falls back to `action.id` (not `action.code`).
 
 ### Sub-action labels (limitation)
 
@@ -318,7 +363,10 @@ export default buildConfig({
               admin: { group: "Hệ thống" },
               fields: {
                 code: { label: "Mã quyền thao tác" },
-                status: { activeLabel: "Hoạt động", inactiveLabel: "Ngừng hoạt động" },
+                status: {
+                  activeLabel: "Hoạt động",
+                  inactiveLabel: "Ngừng hoạt động",
+                },
               },
             },
             roles: {
@@ -381,28 +429,28 @@ import type { RolePermissionMatrixClientTranslations } from "@zealamic/payload-a
 
 Shipped defaults (override via `translations.en`):
 
-| Source file | Content |
-|-------------|---------|
-| `src/collections/permission-actions/default-data.ts` | Permission actions |
-| `src/collections/permission-features/default-data.ts` | Permission features |
-| `src/collections/permissions/default-data.ts` | Permissions |
-| `src/collections/roles/default-data.ts` | Roles + dataScope |
-| `src/collections/roles-permissions/default-data.ts` | Role permissions join |
-| `src/collections/users/default-data.ts` | User fields |
-| `src/components/role-permission-matrix-client/default-data.ts` | Matrix UI |
+| Source file                                                    | Content               |
+| -------------------------------------------------------------- | --------------------- |
+| `src/collections/permission-actions/default-data.ts`           | Permission actions    |
+| `src/collections/permission-features/default-data.ts`          | Permission features   |
+| `src/collections/permissions/default-data.ts`                  | Permissions           |
+| `src/collections/roles/default-data.ts`                        | Roles + dataScope     |
+| `src/collections/roles-permissions/default-data.ts`            | Role permissions join |
+| `src/collections/users/default-data.ts`                        | User fields           |
+| `src/components/role-permission-matrix-client/default-data.ts` | Matrix UI             |
 
 ---
 
 ## Quick reference
 
-| Goal | Path |
-|------|------|
-| Sidebar group | `translations.<locale>.collections.<key>.admin.group` |
-| Collection name | `…labels.singular` / `…labels.plural` |
-| Field label | `…fields.<fieldName>.label` |
-| Select option | `…fields.<fieldName>.<value>Label` |
-| Matrix title | `…components.rolePermissionMatrix.title` |
-| Matrix action column | `…components.rolePermissionMatrix.actions.<code>` |
+| Goal                     | Path                                                                        |
+| ------------------------ | --------------------------------------------------------------------------- |
+| Sidebar group            | `translations.<locale>.collections.<key>.admin.group`                       |
+| Collection name          | `…labels.singular` / `…labels.plural`                                       |
+| Field label              | `…fields.<fieldName>.label`                                                 |
+| Select option            | `…fields.<fieldName>.<value>Label`                                          |
+| Matrix title             | `…components.rolePermissionMatrix.title`                                    |
+| Matrix action column     | `…components.rolePermissionMatrix.actions.<code>`                           |
 | Override field in schema | Use **schema field name** (`permissionMatrixDraft`, not `permissionMatrix`) |
 
 ---

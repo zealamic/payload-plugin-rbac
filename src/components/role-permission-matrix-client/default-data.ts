@@ -1,4 +1,4 @@
-import type { RolePermissionMatrixClientTranslations } from "./types.js"
+import type { RolePermissionMatrixClientTranslations } from "./types.js";
 
 export const rolePermissionMatrixClientDefaultTranslations: RolePermissionMatrixClientTranslations =
   {
@@ -12,6 +12,7 @@ export const rolePermissionMatrixClientDefaultTranslations: RolePermissionMatrix
       title: "Permission Matrix",
       features: {
         label: "Features",
+        users: "Users",
       },
       actions: {
         label: "Actions",
@@ -21,4 +22,4 @@ export const rolePermissionMatrixClientDefaultTranslations: RolePermissionMatrix
         delete: "Delete",
       },
     },
-  }
+  };

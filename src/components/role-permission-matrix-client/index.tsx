@@ -19,6 +19,10 @@ import {
 import { STATUS as PERMISSION_FEATURE_STATUS } from "../../lib/constants/permission-feature.js";
 import { toID } from "../../lib/utils/data.js";
 
+import styles from "./matrix.module.scss";
+
+const RBAC_PREFIX = "rbac";
+
 type ApiListResponse<T> = {
   docs?: T[];
 };
@@ -149,7 +153,7 @@ export const RolePermissionMatrixClient = () => {
 
   if (!id) {
     return (
-      <div style={{ opacity: 0.8, padding: "8px 0" }}>
+      <div className={styles[`${RBAC_PREFIX}-component-placeholder`]}>
         {t(
           `components:rolePermissionMatrix:viewInUpdateScreenOnly:label` as Parameters<
             typeof t
@@ -161,7 +165,7 @@ export const RolePermissionMatrixClient = () => {
 
   if (loading) {
     return (
-      <div style={{ opacity: 0.8, padding: "8px 0" }}>
+      <div className={styles[`${RBAC_PREFIX}-component-placeholder`]}>
         {t(
           `components:rolePermissionMatrix:loading:placeholder` as Parameters<
             typeof t
@@ -173,27 +177,15 @@ export const RolePermissionMatrixClient = () => {
 
   return (
     <div>
-      <div style={{ fontWeight: 600, marginBottom: 8 }}>
+      <div className={styles[`${RBAC_PREFIX}-component-title`]}>
         {t(`components:rolePermissionMatrix:title` as Parameters<typeof t>[0])}
       </div>
 
-      <div style={{ border: "1px solid #333", borderRadius: 8 }}>
-        <table
-          style={{
-            borderCollapse: "collapse",
-            width: "100%",
-          }}
-        >
+      <div className={styles[`${RBAC_PREFIX}-table-container`]}>
+        <table className={styles[`${RBAC_PREFIX}-table`]}>
           <thead>
             <tr>
-              <th
-                style={{
-                  padding: "8px",
-                  textAlign: "left",
-                  borderRight: "1px solid #333",
-                  width: "25%",
-                }}
-              >
+              <th className={styles[`${RBAC_PREFIX}-table-th-feature`]}>
                 {t(
                   `components:rolePermissionMatrix:features:label` as Parameters<
                     typeof t
@@ -201,7 +193,7 @@ export const RolePermissionMatrixClient = () => {
                 )}
               </th>
               <th
-                style={{ padding: "8px", textAlign: "left" }}
+                className={styles[`${RBAC_PREFIX}-table-th-action`]}
                 colSpan={
                   actions.filter((action) => action.type === TYPE.MAIN).length
                 }
@@ -233,14 +225,12 @@ export const RolePermissionMatrixClient = () => {
               return (
                 <Fragment key={String(feature.id)}>
                   <tr>
-                    <td
-                      style={{
-                        borderTop: "1px solid #333",
-                        padding: "0.5rem",
-                        borderRight: "1px solid #333",
-                      }}
-                    >
-                      {feature.code || feature.id}
+                    <td className={styles[`${RBAC_PREFIX}-table-td-feature`]}>
+                      {t(
+                        `components:rolePermissionMatrix:features:${feature.code}` as Parameters<
+                          typeof t
+                        >[0],
+                      ) || feature.id}
                     </td>
 
                     {mainActions.map((action) => {
@@ -256,10 +246,7 @@ export const RolePermissionMatrixClient = () => {
                         return (
                           <td
                             key={`${feature.id}-${action.id}`}
-                            style={{
-                              borderTop: "1px solid #333",
-                              padding: "0.5rem",
-                            }}
+                            className={styles[`${RBAC_PREFIX}-table-td-action`]}
                           >
                             -
                           </td>
@@ -275,16 +262,12 @@ export const RolePermissionMatrixClient = () => {
                       return (
                         <td
                           key={`${feature.id}-${action.id}`}
-                          style={{
-                            borderTop: "1px solid #333",
-                            padding: "0.5rem",
-                          }}
+                          className={styles[`${RBAC_PREFIX}-table-td-action`]}
                         >
                           <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                            }}
+                            className={
+                              styles[`${RBAC_PREFIX}-table-td-action-container`]
+                            }
                           >
                             <input
                               type="checkbox"
@@ -298,19 +281,15 @@ export const RolePermissionMatrixClient = () => {
                                   [permissionID]: event.target.checked,
                                 });
                               }}
-                              style={{
-                                userSelect: "none",
-                                cursor: "pointer",
-                              }}
+                              className={
+                                styles[`${RBAC_PREFIX}-table-td-action-input`]
+                              }
                             />
                             <label
                               htmlFor={`permission-matrix-checkbox-${checkboxId}-${feature.id}-${action.id}`}
-                              style={{
-                                display: "inline-block",
-                                paddingLeft: "0.25rem",
-                                userSelect: "none",
-                                cursor: "pointer",
-                              }}
+                              className={
+                                styles[`${RBAC_PREFIX}-table-td-action-label`]
+                              }
                             >
                               {t(
                                 `components:rolePermissionMatrix:actions:${action.code}` as Parameters<
@@ -327,18 +306,10 @@ export const RolePermissionMatrixClient = () => {
                   {isSubActionInPermission && (
                     <tr>
                       <td
-                        style={{
-                          borderRight: "1px solid #333",
-                          padding: "8px",
-                          textAlign: "right",
-                        }}
+                        className={styles[`${RBAC_PREFIX}-table-td-feature`]}
                       ></td>
                       <td
-                        style={{
-                          borderTop: "1px solid #333",
-                          padding: "8px",
-                          textAlign: "left",
-                        }}
+                        className={styles[`${RBAC_PREFIX}-table-td-action`]}
                         colSpan={mainActions.length}
                       >
                         {subActions.map((action) => {

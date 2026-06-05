@@ -1,0 +1,69 @@
+// Import Payload compile-time SCSS vars ($breakpoint-s-width, etc.).
+// Note: @payloadcms/ui/scss/vars is not a published export — use dist/scss/vars.
+@use "../../../node_modules/@payloadcms/ui/dist/scss/vars" as payload-vars;
+@use "../../styles/variables" as rbac-vars;
+
+$local-prefix: rbac-vars.$rbac-prefix;
+
+.#{$local-prefix}-component {
+  &-label {
+    opacity: 0.8;
+    padding: 0.5rem 0;
+  }
+  &-placeholder {
+    opacity: 0.8;
+    padding: 0.5rem 0;
+  }
+  &-title {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+}
+
+.#{$local-prefix}-table {
+  border-collapse: collapse;
+  width: 100%;
+  &-container {
+    border-radius: var(--style-radius-m);
+    border: 1px solid var(--theme-border-color);
+    @media only screen and (min-width: payload-vars.$breakpoint-s-width) {
+      border-radius: var(--style-radius-l);
+    }
+  }
+  &-th {
+    &-feature {
+      padding: 0.5rem;
+      text-align: left;
+      border-right: 1px solid var(--theme-border-color);
+      width: 25%;
+    }
+    &-action {
+      padding: 0.5rem;
+    }
+  }
+  &-td {
+    &-feature {
+      border-right: 1px solid var(--theme-border-color);
+      border-top: 1px solid var(--theme-border-color);
+      padding: 0.5rem;
+    }
+    &-action {
+      border-top: 1px solid var(--theme-border-color);
+      padding: 0.5rem;
+      &-container {
+        display: flex;
+        align-items: center;
+      }
+      &-input {
+        user-select: none;
+        cursor: pointer;
+      }
+      &-label {
+        display: inline-block;
+        padding-left: 0.25rem;
+        user-select: none;
+        cursor: pointer;
+      }
+    }
+  }
+}

@@ -46,10 +46,12 @@
   "types": "./src/general.d.ts",
   "files": [
     "dist",
-    "docs/cover-photo.jpg"
+    "docs",
+    "assets"
   ],
   "scripts": {
-    "build": "yarn copyfiles && yarn build:types && yarn build:swc",
+    "copy:styles": "node -e \"require('fs').cpSync('src/styles', 'dist/styles', {recursive:true})\"",
+    "build": "yarn copyfiles && yarn build:types && yarn build:swc && yarn copy:styles",
     "build:swc": "swc ./src -d ./dist --config-file .swcrc --strip-leading-paths",
     "build:types": "tsc --outDir dist --rootDir ./src",
     "clean": "rimraf {dist,*.tsbuildinfo}",
