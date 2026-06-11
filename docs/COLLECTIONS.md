@@ -120,7 +120,7 @@ read: getPermissionAndDataScopeReadAccess({
 }),
 ```
 
-**Users collection:** the plugin uses `createdByField: "id"` (each user document is “owned” by itself) and adds `parent` / `parentPath` for hierarchy. See [UTILS](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/UTILS.md) for full helper reference.
+**Users collection:** the plugin uses `createdByField: "id"` (each user document is “owned” by itself) and adds `parent` / `parentPath` for hierarchy. See [UTILS](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/UTILS.md) for full helper reference.
 
 **Super admin (`isSuperAdmin`):** bypasses permission checks **and** data scope on every helper. Use sparingly for platform administrators — not for everyday business roles. Set via seed/Local API only (`isSuperAdmin` is read-only in Admin).
 
@@ -212,12 +212,12 @@ Pass overrides under `collections` in plugin config:
 ```ts
 import {
   getPermissionAccess,
-  payloadAuthRbacPlugin,
+  payloadPluginRBAC,
 } from "@zealamic/payload-plugin-rbac";
 
 export default buildConfig({
   plugins: [
-    payloadAuthRbacPlugin({
+    payloadPluginRBAC({
       autoModifyUsersCollection: true,
       collections: {
         permissionActions: {
@@ -343,7 +343,7 @@ collections: {
 ### 6. Translate user field labels (not via `collections.users`)
 
 ```ts
-payloadAuthRbacPlugin({
+payloadPluginRBAC({
   translations: {
     en: {
       collections: {
@@ -364,7 +364,7 @@ payloadAuthRbacPlugin({
 ```ts
 export default buildConfig({
   admin: { user: "members" },
-  plugins: [payloadAuthRbacPlugin({ autoModifyUsersCollection: true })],
+  plugins: [payloadPluginRBAC({ autoModifyUsersCollection: true })],
   collections: [
     {
       slug: "members",
@@ -380,7 +380,7 @@ Seed `permission-features` with `code: "members"` to match the slug.
 ### 8. Disable auto-modify users
 
 ```ts
-payloadAuthRbacPlugin({
+payloadPluginRBAC({
   autoModifyUsersCollection: false,
 });
 ```
@@ -398,7 +398,7 @@ You must add `roles`, `isSuperAdmin`, and wire `getPermissionAccess` on the user
 5. Create **roles**, configure the matrix, and Save
 6. Assign **roles** to users
 7. Bootstrap a **super admin** (seed / DB)
-8. Apply access helpers on app collections — see [UTILS](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/UTILS.md)
+8. Apply access helpers on app collections — see [UTILS](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/UTILS.md)
 
 ---
 
@@ -430,11 +430,11 @@ hooks: {
 
 | Goal                       | Use                                                                                                                  |
 | -------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Translate labels           | `translations` → [TRANSLATIONS](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/TRANSLATIONS.md) |
+| Translate labels           | `translations` → [TRANSLATIONS](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/TRANSLATIONS.md) |
 | Hide / extend fields       | `collections.<key>.fields`                                                                                           |
 | Change who can CRUD        | `collections.<key>.access`                                                                                           |
-| Access helpers             | [UTILS](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/UTILS.md)                                |
-| Setup & plugin config      | [README](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/README.md)                                   |
+| Access helpers             | [UTILS](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/UTILS.md)                                |
+| Setup & plugin config      | [README](https://github.com/zealamic/payload-plugin-rbac/blob/main/README.md)                                   |
 | Disable users modification | `autoModifyUsersCollection: false`                                                                                   |
 
 Working demos: `dev/rbac.ts`, `dev/collections/posts.ts`.

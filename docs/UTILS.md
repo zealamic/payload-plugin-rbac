@@ -221,6 +221,6 @@ CONSTANTS.USER.PARENT_PATH_SEPARATOR;
 
 ## Related docs
 
-- [README](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/README.md) — install and quick start
-- [COLLECTIONS](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/COLLECTIONS.md) — collection schemas and customization
-- [TRANSLATIONS](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/TRANSLATIONS.md) — i18n keys
+- [README](https://github.com/zealamic/payload-plugin-rbac/blob/main/README.md) — install and quick start
+- [COLLECTIONS](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/COLLECTIONS.md) — collection schemas and customization
+- [TRANSLATIONS](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/TRANSLATIONS.md) — i18n keys

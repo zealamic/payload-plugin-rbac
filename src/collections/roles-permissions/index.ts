@@ -7,16 +7,8 @@ import {
 } from "../../lib/utils/index.js";
 import type { RolesPermissionsCollectionParams } from "./types.js";
 
-export const getRolesPermissionsCollection = (
-  params: RolesPermissionsCollectionParams,
-) => {
-  const {
-    translations = {},
-    access = {},
-    fields = [],
-    labels = {},
-    admin = {},
-  } = params || {};
+export const getRolesPermissionsCollection = (params: RolesPermissionsCollectionParams) => {
+  const { translations = {}, access = {}, fields = [], labels = {}, admin = {} } = params || {};
   const arrTranslationsKeys = Object.keys(translations);
   const rolesPermissions: CollectionConfig = {
     slug: "roles-permissions",
@@ -25,17 +17,11 @@ export const getRolesPermissionsCollection = (
         arrTranslationsKeys,
         (locale) => translations[locale]?.labels?.singular,
       ),
-      plural: toLocaleRecord(
-        arrTranslationsKeys,
-        (locale) => translations[locale]?.labels?.plural,
-      ),
+      plural: toLocaleRecord(arrTranslationsKeys, (locale) => translations[locale]?.labels?.plural),
       ...labels,
     },
     admin: {
-      group: toLocaleRecord(
-        arrTranslationsKeys,
-        (locale) => translations[locale]?.admin?.group,
-      ),
+      group: toLocaleRecord(arrTranslationsKeys, (locale) => translations[locale]?.admin?.group),
       useAsTitle: "role",
       defaultColumns: ["role", "permission", "enabled", "updatedAt"],
       hidden: true,

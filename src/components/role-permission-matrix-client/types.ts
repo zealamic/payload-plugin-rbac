@@ -1,3 +1,17 @@
+export const ROLE_PERMISSION_MATRIX_I18N_PREFIX = "components:rolePermissionMatrix" as const;
+
+export type RolePermissionMatrixTranslationKey =
+  | `${typeof ROLE_PERMISSION_MATRIX_I18N_PREFIX}:viewInUpdateScreenOnly:label`
+  | `${typeof ROLE_PERMISSION_MATRIX_I18N_PREFIX}:loading:placeholder`
+  | `${typeof ROLE_PERMISSION_MATRIX_I18N_PREFIX}:title`
+  | `${typeof ROLE_PERMISSION_MATRIX_I18N_PREFIX}:featuresLabel`
+  | `${typeof ROLE_PERMISSION_MATRIX_I18N_PREFIX}:actionsLabel`
+  | `${typeof ROLE_PERMISSION_MATRIX_I18N_PREFIX}:error:placeholder`
+  | `${typeof ROLE_PERMISSION_MATRIX_I18N_PREFIX}:search:placeholder`
+  | `${typeof ROLE_PERMISSION_MATRIX_I18N_PREFIX}:search:noResults`
+  | `${typeof ROLE_PERMISSION_MATRIX_I18N_PREFIX}:features:${string}`
+  | `${typeof ROLE_PERMISSION_MATRIX_I18N_PREFIX}:actions:${string}`;
+
 export type RolePermissionMatrixClientTranslations = {
   [locale: string]: {
     viewInUpdateScreenOnly?: {
@@ -12,5 +26,14 @@ export type RolePermissionMatrixClientTranslations = {
     features?: Record<string, string>;
     actionsLabel?: string;
     actions?: Record<string, string>;
+    search?: {
+      placeholder?: string;
+      noResults?: string;
+    };
+    error?: {
+      placeholder?: string;
+    };
   };
 };
+
+export type RolePermissionMatrixClientProps = {};

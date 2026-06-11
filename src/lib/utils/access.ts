@@ -55,9 +55,7 @@ const hasInlineSuperAdmin = (user: RequestUser | null | undefined): boolean => {
   return Boolean(user.isSuperAdmin);
 };
 
-const pickWidestDataScope = (
-  scopes: Array<DataScope | null | undefined>,
-): DataScope => {
+const pickWidestDataScope = (scopes: Array<DataScope | null | undefined>): DataScope => {
   let widest: DataScope = DATA_SCOPE.OWN;
 
   for (const scope of scopes) {
@@ -198,9 +196,10 @@ export const getSuperAdminAccess = async ({ req }: { req: PayloadRequest }) => {
 /**
  * Access helper: allow current document owner or super admin.
  */
-export const getAuthenticatedOrSuperAdminAccess:
-  | Access
-  | Promise<boolean> = async ({ req, id }) => {
+export const getAuthenticatedOrSuperAdminAccess: Access | Promise<boolean> = async ({
+  req,
+  id,
+}) => {
   const user = req.user as RequestUser | undefined;
   if (!user?.id) {
     return false;
@@ -290,10 +289,7 @@ export const resolveEffectiveDataScope = async (
     pagination: false,
     req,
     where: {
-      and: [
-        { id: { in: roleIDs } },
-        { status: { equals: ROLE_STATUS.ACTIVE } },
-      ],
+      and: [{ id: { in: roleIDs } }, { status: { equals: ROLE_STATUS.ACTIVE } }],
     },
   });
 
@@ -310,8 +306,7 @@ export const getHierarchyVisibleUserIds = async (
   req: PayloadRequest,
   options: DataScopeOptions = {},
 ): Promise<string[]> => {
-  const usersCollectionSlug =
-    options.usersCollectionSlug ?? DEFAULT_USERS_COLLECTION;
+  const usersCollectionSlug = options.usersCollectionSlug ?? DEFAULT_USERS_COLLECTION;
   const user = req.user as RequestUser | undefined;
   const userId = user?.id;
 
@@ -396,18 +391,15 @@ const getCreatedById = (
   return toID(value as UserRoleRef) || undefined;
 };
 
-const isUsersCollection = (
-  collectionSlug: string,
-  usersCollectionSlug: string,
-) => collectionSlug === usersCollectionSlug;
+const isUsersCollection = (collectionSlug: string, usersCollectionSlug: string) =>
+  collectionSlug === usersCollectionSlug;
 
 /**
  * Guard for privileged user documents.
  * Non-super-admins cannot mutate users where `isSuperAdmin === true`.
  */
-export const isProtectedSuperAdminUserDoc = (
-  doc: Record<string, unknown>,
-): boolean => Boolean(doc.isSuperAdmin);
+export const isProtectedSuperAdminUserDoc = (doc: Record<string, unknown>): boolean =>
+  Boolean(doc.isSuperAdmin);
 
 /**
  * Document-level access check:
@@ -431,8 +423,7 @@ export const canAccessDocumentByDataScope = async ({
 }): Promise<boolean> => {
   const user = req.user as RequestUser | undefined;
   const createdByField = options.createdByField ?? DEFAULT_CREATED_BY_FIELD;
-  const usersCollectionSlug =
-    options.usersCollectionSlug ?? DEFAULT_USERS_COLLECTION;
+  const usersCollectionSlug = options.usersCollectionSlug ?? DEFAULT_USERS_COLLECTION;
 
   if (!user?.id) {
     return false;
@@ -485,10 +476,7 @@ export const canAccessDocumentByDataScope = async ({
 /**
  * Merge an existing `where` with scope-derived constraints.
  */
-export const mergeDataScopeWhere = (
-  base: Where | undefined,
-  scopeWhere: Where | true,
-): Where => {
+export const mergeDataScopeWhere = (base: Where | undefined, scopeWhere: Where | true): Where => {
   if (scopeWhere === true) {
     return base ?? {};
   }

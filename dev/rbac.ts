@@ -1,23 +1,20 @@
-import {
-  getPermissionAccess,
-  payloadAuthRbacPlugin,
-} from "payload-auth-rbac-plugin";
+import { getPermissionAccess, payloadPluginRBAC } from "@zealamic/payload-plugin-rbac"
 
-export const rbacPlugin = payloadAuthRbacPlugin({
+export const rbacPlugin = payloadPluginRBAC({
   autoModifyUsersCollection: true,
   collections: {
     // Demo: pass override params for each collection
     permissionActions: {
       // Demo 1: hide sortOrder field in admin form
-      fields: [
-        {
-          name: "sortOrder",
-          type: "number",
-          admin: {
-            hidden: true,
-          },
-        },
-      ],
+      // fields: [
+      //   {
+      //     name: "sortOrder",
+      //     type: "number",
+      //     admin: {
+      //       hidden: true,
+      //     },
+      //   },
+      // ],
       // Demo 2: override collection access rules
       access: {
         read: getPermissionAccess({
@@ -45,8 +42,7 @@ export const rbacPlugin = payloadAuthRbacPlugin({
           fields: {
             code: {
               label: "Mã quyền thao tác",
-              placeholder:
-                "Nhập mã quyền thao tác (vd: create, read, update, delete)",
+              placeholder: "Nhập mã quyền thao tác (vd: create, read, update, delete)",
             },
             type: {
               label: "Loại quyền thao tác",
@@ -88,8 +84,7 @@ export const rbacPlugin = payloadAuthRbacPlugin({
           fields: {
             code: {
               label: "Action Code",
-              placeholder:
-                "Enter action code (e.g. create, read, update, delete)",
+              placeholder: "Enter action code (e.g. create, read, update, delete)",
             },
             type: {
               label: "Action Type",
@@ -119,4 +114,4 @@ export const rbacPlugin = payloadAuthRbacPlugin({
       },
     },
   },
-});
+})

@@ -9,19 +9,34 @@ $local-prefix: rbac-vars.$rbac-prefix;
   &-label {
     opacity: 0.8;
     padding: 0.5rem 0;
+    min-height: 3rem;
   }
   &-placeholder {
     opacity: 0.8;
     padding: 0.5rem 0;
+    min-height: 3rem;
   }
   &-title {
     font-weight: 600;
-    margin-bottom: 0.5rem;
+    font-size: 1.25rem;
+    padding-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-height: 3rem;
+  }
+  &-search {
+    flex: 1;
+    margin-inline-start: auto;
+    margin-bottom: 0;
+    max-width: 16rem;
   }
 }
 
 .#{$local-prefix}-table {
   border-collapse: collapse;
+  border-spacing: 0 !important;
   width: 100%;
   &-container {
     border-radius: var(--style-radius-m);
@@ -43,6 +58,24 @@ $local-prefix: rbac-vars.$rbac-prefix;
       border-right: 1px solid var(--theme-border-color);
       border-top: 1px solid var(--theme-border-color);
       padding: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      &-container {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+      &-label {
+        user-select: none;
+        cursor: pointer;
+      }
+    }
+    &-empty {
+      border-top: 1px solid var(--theme-border-color);
+      opacity: 0.8;
+      padding: 0.75rem 0.5rem;
+      text-align: center;
     }
     &-action {
       border-top: 1px solid var(--theme-border-color);
@@ -60,6 +93,11 @@ $local-prefix: rbac-vars.$rbac-prefix;
         padding-left: 0.25rem;
         user-select: none;
         cursor: pointer;
+      }
+      &-sub-action-container {
+        display: inline-flex;
+        align-items: center;
+        margin-inline-end: 1rem;
       }
     }
   }

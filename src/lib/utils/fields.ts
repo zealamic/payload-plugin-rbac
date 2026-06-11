@@ -18,9 +18,7 @@ export const getMergedFieldAffectingData = ({
   }
 
   const defaultName = defaultField.name;
-  const customField = fields.find(
-    (field) => fieldAffectsData(field) && field.name === defaultName,
-  );
+  const customField = fields.find((field) => fieldAffectsData(field) && field.name === defaultName);
 
   if (customField) {
     return {
@@ -43,9 +41,7 @@ export const getArrayOfMergedFieldAffectingData = ({
   fields: Field[];
   defaultFields: Field[];
 }): Field[] => {
-  const defaultNames = new Set(
-    defaultFields.filter(fieldAffectsData).map((field) => field.name),
-  );
+  const defaultNames = new Set(defaultFields.filter(fieldAffectsData).map((field) => field.name));
 
   const mergedFromDefaults = defaultFields.map((defaultField) =>
     getMergedFieldAffectingData({ fields, defaultField }),

@@ -21,9 +21,7 @@ export const toSelectPlaceholder = (
   locales: string[],
   getValue: (locale: string) => string | undefined,
 ): NonNullable<SelectField["admin"]>["placeholder"] =>
-  toLocaleRecord(locales, getValue) as unknown as NonNullable<
-    SelectField["admin"]
-  >["placeholder"];
+  toLocaleRecord(locales, getValue) as unknown as NonNullable<SelectField["admin"]>["placeholder"];
 
 type TranslationObject = {
   [key: string]: TranslationValue;
@@ -53,9 +51,7 @@ const mergeTranslationNodes = (
 };
 
 /** Plugin defaults merged with host `translations` overrides. */
-export const getMergedTranslations = <
-  T extends Record<string, TranslationValue>,
->({
+export const getMergedTranslations = <T extends Record<string, TranslationValue>>({
   defaultTranslations,
   translations,
 }: {
@@ -87,11 +83,7 @@ export const getAllTranslationsOfSpecificObject = <T = unknown>({
 
     let current: unknown = localeData;
     for (const segment of segments) {
-      if (
-        typeof current !== "object" ||
-        current === null ||
-        !(segment in current)
-      ) {
+      if (typeof current !== "object" || current === null || !(segment in current)) {
         current = undefined;
         break;
       }

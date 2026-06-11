@@ -4,7 +4,7 @@ Customize Admin labels, placeholders, select options, and permission-matrix UI t
 
 ```ts
 import type { RBACTranslations } from "@zealamic/payload-plugin-rbac/types";
-import { payloadAuthRbacPlugin } from "@zealamic/payload-plugin-rbac";
+import { payloadPluginRBAC } from "@zealamic/payload-plugin-rbac";
 
 export default buildConfig({
   i18n: {
@@ -12,7 +12,7 @@ export default buildConfig({
     fallbackLanguage: "en",
   },
   plugins: [
-    payloadAuthRbacPlugin({
+    payloadPluginRBAC({
       translations: {
         en: {
           /* partial overrides OK */
@@ -45,7 +45,7 @@ Plugin English defaults
     → deep-merge into existing config.i18n.translations
 ```
 
-You only pass RBAC strings to **`payloadAuthRbacPlugin({ translations })`**. The plugin registers them into Payload i18n automatically — do **not** duplicate the same keys in `config.i18n.translations`.
+You only pass RBAC strings to **`payloadPluginRBAC({ translations })`**. The plugin registers them into Payload i18n automatically — do **not** duplicate the same keys in `config.i18n.translations`.
 
 Your project's `config.i18n` still owns:
 
@@ -243,7 +243,7 @@ components:rolePermissionMatrix:features:{featureCode}
 Add one key per feature code under `translations.<locale>.components.rolePermissionMatrix.features`:
 
 ```ts
-payloadAuthRbacPlugin({
+payloadPluginRBAC({
   translations: {
     en: {
       components: {
@@ -275,7 +275,7 @@ components:rolePermissionMatrix:actions:{actionCode}
 `{actionCode}` must match **`permission-actions.code` exactly**.
 
 ```ts
-payloadAuthRbacPlugin({
+payloadPluginRBAC({
   translations: {
     en: {
       components: {
@@ -311,7 +311,7 @@ Sub-actions (`type: "sub"`) **do not** use `useTranslation` — the UI shows raw
 ### Partial English override
 
 ```ts
-payloadAuthRbacPlugin({
+payloadPluginRBAC({
   translations: {
     en: {
       collections: {
@@ -352,7 +352,7 @@ export default buildConfig({
     fallbackLanguage: "en",
   },
   plugins: [
-    payloadAuthRbacPlugin({
+    payloadPluginRBAC({
       translations: {
         en: {
           collections: {
@@ -464,6 +464,6 @@ Shipped defaults (override via `translations.en`):
 
 ## Related docs
 
-- [README](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/README.md) — install and quick start
-- [COLLECTIONS](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/COLLECTIONS.md) — collection schemas and customization
-- [UTILS](https://github.com/zealamic/payload-auth-rbac-plugin/blob/main/docs/UTILS.md) — access helpers
+- [README](https://github.com/zealamic/payload-plugin-rbac/blob/main/README.md) — install and quick start
+- [COLLECTIONS](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/COLLECTIONS.md) — collection schemas and customization
+- [UTILS](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/UTILS.md) — access helpers

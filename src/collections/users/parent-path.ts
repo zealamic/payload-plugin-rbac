@@ -19,9 +19,7 @@ const getParentId = (parent: ItemRef | null | undefined): string | undefined => 
 };
 
 /** Ancestor IDs from root to parent (exclusive of self), e.g. `"1,2"`. */
-export const buildParentPathFromParentDoc = (
-  parent: UserDoc | null | undefined,
-): string => {
+export const buildParentPathFromParentDoc = (parent: UserDoc | null | undefined): string => {
   if (!parent?.id) {
     return "";
   }
@@ -184,10 +182,7 @@ export const createUserParentPathHooks = (userSlug: string) => {
     const parentId = getParentId(parentRef);
 
     const validation = await validateParentAssignment({
-      userId:
-        operation === "update"
-          ? (previous?.id ?? incoming.id)
-          : incoming.id,
+      userId: operation === "update" ? (previous?.id ?? incoming.id) : incoming.id,
       parentId,
       req,
       userSlug,
@@ -206,12 +201,7 @@ export const createUserParentPathHooks = (userSlug: string) => {
     return incoming;
   };
 
-  const afterChange: CollectionAfterChangeHook = async ({
-    doc,
-    previousDoc,
-    req,
-    operation,
-  }) => {
+  const afterChange: CollectionAfterChangeHook = async ({ doc, previousDoc, req, operation }) => {
     const current = doc as UserDoc;
     const previous = previousDoc as UserDoc | undefined;
 
@@ -222,8 +212,7 @@ export const createUserParentPathHooks = (userSlug: string) => {
     const previousParentId = getParentId(previous?.parent);
     const nextParentId = getParentId(current.parent);
 
-    const parentChanged =
-      operation === "create" || previousParentId !== nextParentId;
+    const parentChanged = operation === "create" || previousParentId !== nextParentId;
 
     if (parentChanged) {
       await syncDescendantParentPaths({
@@ -298,8 +287,7 @@ export const mergeUserCollectionHooks = ({
   };
   userSlug: string;
 }) => {
-  const { beforeChange, afterChange, afterDelete } =
-    createUserParentPathHooks(userSlug);
+  const { beforeChange, afterChange, afterDelete } = createUserParentPathHooks(userSlug);
 
   return {
     ...existingHooks,

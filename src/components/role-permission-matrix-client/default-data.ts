@@ -9,12 +9,19 @@ export const rolePermissionMatrixClientDefaultTranslations: RolePermissionMatrix
       loading: {
         placeholder: "Loading permission matrix...",
       },
+      error: {
+        placeholder: "Failed to load permission matrix. Please try again.",
+      },
       title: "Permission Matrix",
       featuresLabel: "Features",
       features: {
         users: "Users",
       },
       actionsLabel: "Actions",
+      search: {
+        placeholder: "Search features...",
+        noResults: "No features match your search.",
+      },
       actions: {
         create: "Create",
         read: "Read",

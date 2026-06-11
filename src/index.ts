@@ -13,12 +13,9 @@ import { usersDefaultTranslations } from "./collections/users/default-data.js";
 import { modifyUsersCollection } from "./collections/users/index.js";
 import { rolePermissionMatrixClientDefaultTranslations } from "./components/role-permission-matrix-client/default-data.js";
 
-import {
-  getAllTranslationsOfSpecificObject,
-  getMergedTranslations,
-} from "./lib/utils/index.js";
+import { getAllTranslationsOfSpecificObject, getMergedTranslations } from "./lib/utils/index.js";
 import type {
-  PayloadAuthRbacPluginConfig,
+  PayloadPluginRBACConfig,
   PermissionActionsCollectionTranslations,
   PermissionFeaturesCollectionTranslations,
   PermissionsCollectionTranslations,
@@ -31,8 +28,8 @@ export * from "./lib/constants/index.js";
 export * from "./lib/utils/index.js";
 export type * from "./types.js";
 
-export const payloadAuthRbacPlugin =
-  (pluginOptions: PayloadAuthRbacPluginConfig) =>
+export const payloadPluginRBAC =
+  (pluginOptions: PayloadPluginRBACConfig) =>
   (config: Config): Config => {
     if (!config.collections) {
       config.collections = [];
@@ -47,13 +44,12 @@ export const payloadAuthRbacPlugin =
         ...pluginOptions.collections?.permissionActions,
         translations: getMergedTranslations({
           defaultTranslations: permissionActionsDefaultTranslations,
-          translations:
-            getAllTranslationsOfSpecificObject<PermissionActionsCollectionTranslations>(
-              {
-                translations: pluginOptions.translations,
-                path: "collections.permissionActions",
-              },
-            ),
+          translations: getAllTranslationsOfSpecificObject<PermissionActionsCollectionTranslations>(
+            {
+              translations: pluginOptions.translations,
+              path: "collections.permissionActions",
+            },
+          ),
         }),
       }),
     );
@@ -63,12 +59,10 @@ export const payloadAuthRbacPlugin =
         translations: getMergedTranslations({
           defaultTranslations: permissionFeaturesDefaultTranslations,
           translations:
-            getAllTranslationsOfSpecificObject<PermissionFeaturesCollectionTranslations>(
-              {
-                translations: pluginOptions.translations,
-                path: "collections.permissionFeatures",
-              },
-            ),
+            getAllTranslationsOfSpecificObject<PermissionFeaturesCollectionTranslations>({
+              translations: pluginOptions.translations,
+              path: "collections.permissionFeatures",
+            }),
         }),
       }),
     );
@@ -77,13 +71,10 @@ export const payloadAuthRbacPlugin =
         ...pluginOptions.collections?.permissions,
         translations: getMergedTranslations({
           defaultTranslations: permissionsDefaultTranslations,
-          translations:
-            getAllTranslationsOfSpecificObject<PermissionsCollectionTranslations>(
-              {
-                translations: pluginOptions.translations,
-                path: "collections.permissions",
-              },
-            ),
+          translations: getAllTranslationsOfSpecificObject<PermissionsCollectionTranslations>({
+            translations: pluginOptions.translations,
+            path: "collections.permissions",
+          }),
         }),
       }),
     );
@@ -92,11 +83,10 @@ export const payloadAuthRbacPlugin =
         ...pluginOptions.collections?.roles,
         translations: getMergedTranslations({
           defaultTranslations: rolesDefaultTranslations,
-          translations:
-            getAllTranslationsOfSpecificObject<RolesCollectionTranslations>({
-              translations: pluginOptions.translations,
-              path: "collections.roles",
-            }),
+          translations: getAllTranslationsOfSpecificObject<RolesCollectionTranslations>({
+            translations: pluginOptions.translations,
+            path: "collections.roles",
+          }),
         }),
       }),
     );
@@ -105,13 +95,10 @@ export const payloadAuthRbacPlugin =
         ...pluginOptions.collections?.rolesPermissions,
         translations: getMergedTranslations({
           defaultTranslations: rolesPermissionsDefaultTranslations,
-          translations:
-            getAllTranslationsOfSpecificObject<RolesPermissionsCollectionTranslations>(
-              {
-                translations: pluginOptions.translations,
-                path: "collections.rolesPermissions",
-              },
-            ),
+          translations: getAllTranslationsOfSpecificObject<RolesPermissionsCollectionTranslations>({
+            translations: pluginOptions.translations,
+            path: "collections.rolesPermissions",
+          }),
         }),
       }),
     );
@@ -120,11 +107,10 @@ export const payloadAuthRbacPlugin =
       config = modifyUsersCollection({
         translations: getMergedTranslations({
           defaultTranslations: usersDefaultTranslations,
-          translations:
-            getAllTranslationsOfSpecificObject<UsersModificationTranslations>({
-              translations: pluginOptions.translations,
-              path: "collections.users",
-            }),
+          translations: getAllTranslationsOfSpecificObject<UsersModificationTranslations>({
+            translations: pluginOptions.translations,
+            path: "collections.users",
+          }),
         }),
       })(config);
     }
@@ -171,7 +157,7 @@ export const payloadAuthRbacPlugin =
     // }
 
     // config.admin.components.beforeDashboard.push(
-    //   `payload-auth-rbac-plugin/rsc#BeforeDashboardServer`,
+    //   `payload-plugin-rbac/rsc#BeforeDashboardServer`,
     // )
 
     // config.endpoints.push({
@@ -211,9 +197,7 @@ export const payloadAuthRbacPlugin =
       config.i18n = {};
     }
     const existingTranslations =
-      (config.i18n?.translations as
-        | Record<string, Record<string, unknown>>
-        | undefined) || {};
+      (config.i18n?.translations as Record<string, Record<string, unknown>> | undefined) || {};
 
     const defaultRBACTranslations = {
       en: {
@@ -226,8 +210,7 @@ export const payloadAuthRbacPlugin =
           users: usersDefaultTranslations.en,
         },
         components: {
-          rolePermissionMatrix:
-            rolePermissionMatrixClientDefaultTranslations.en,
+          rolePermissionMatrix: rolePermissionMatrixClientDefaultTranslations.en,
         },
       },
     };
