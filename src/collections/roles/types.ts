@@ -53,4 +53,7 @@ export type RolesCollectionParams = {
   access?: CollectionConfig["access"];
   labels?: CollectionConfig["labels"];
   admin?: CollectionConfig["admin"];
+  components?: {
+    rolePermissionMatrixField?: string;
+  };
 };

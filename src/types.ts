@@ -58,4 +58,7 @@ export type PayloadPluginRBACConfig = {
   disabled?: boolean;
   translations?: RBACTranslations;
   autoModifyUsersCollection?: boolean;
+  components?: {
+    rolePermissionMatrixField?: string;
+  };
 };

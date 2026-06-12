@@ -26,48 +26,6 @@ export const syncPermissionMatrixDraftAfterChange: CollectionAfterChangeHook = a
   const roleID = doc.id;
   const draftPermissionIDs = new Set(Object.keys(doc.permissionMatrixDraft).filter(Boolean));
 
-  for (const [permissionID, enabled] of Object.entries(doc.permissionMatrixDraft)) {
-    if (!permissionID) {
-      continue;
-    }
-
-    const existing = await req.payload.find({
-      collection: "roles-permissions",
-      depth: 0,
-      limit: 1,
-      req,
-      where: {
-        and: [{ role: { equals: roleID } }, { permission: { equals: permissionID } }],
-      },
-    });
-
-    const row = existing.docs[0];
-
-    if (row?.id) {
-      if (row.enabled === enabled) {
-        continue;
-      }
-
-      await req.payload.update({
-        id: row.id,
-        collection: "roles-permissions",
-        data: { enabled },
-        req,
-      });
-      continue;
-    }
-
-    await req.payload.create({
-      collection: "roles-permissions",
-      data: {
-        role: roleID,
-        permission: permissionID,
-        enabled,
-      },
-      req,
-    });
-  }
-
   const existingForRole = await req.payload.find({
     collection: "roles-permissions",
     depth: 0,
@@ -78,18 +36,72 @@ export const syncPermissionMatrixDraftAfterChange: CollectionAfterChangeHook = a
     },
   });
 
+  const existingByPermissionID = new Map<string, (typeof existingForRole.docs)[number]>();
+
   for (const row of existingForRole.docs) {
     const permissionID = toID(row.permission);
 
-    if (!permissionID || draftPermissionIDs.has(permissionID) || !row.enabled) {
+    if (permissionID) {
+      existingByPermissionID.set(permissionID, row);
+    }
+  }
+
+  const writeOperations: Promise<unknown>[] = [];
+
+  for (const [permissionID, enabled] of Object.entries(doc.permissionMatrixDraft)) {
+    if (!permissionID) {
       continue;
     }
 
-    await req.payload.update({
-      id: row.id,
-      collection: "roles-permissions",
-      data: { enabled: false },
-      req,
-    });
+    const row = existingByPermissionID.get(permissionID);
+
+    if (row?.id) {
+      if (row.enabled === enabled) {
+        continue;
+      }
+
+      writeOperations.push(
+        req.payload.update({
+          id: row.id,
+          collection: "roles-permissions",
+          data: { enabled },
+          req,
+        }),
+      );
+      continue;
+    }
+
+    writeOperations.push(
+      req.payload.create({
+        collection: "roles-permissions",
+        data: {
+          role: roleID,
+          permission: permissionID,
+          enabled,
+        },
+        req,
+      }),
+    );
+  }
+
+  for (const row of existingForRole.docs) {
+    const permissionID = toID(row.permission);
+
+    if (!permissionID || draftPermissionIDs.has(permissionID) || !row.enabled || !row.id) {
+      continue;
+    }
+
+    writeOperations.push(
+      req.payload.update({
+        id: row.id,
+        collection: "roles-permissions",
+        data: { enabled: false },
+        req,
+      }),
+    );
+  }
+
+  if (writeOperations.length > 0) {
+    await Promise.all(writeOperations);
   }
 };

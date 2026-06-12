@@ -27,7 +27,7 @@ type TranslationObject = {
   [key: string]: TranslationValue;
 };
 
-type TranslationValue = TranslationObject | string | undefined;
+export type TranslationValue = TranslationObject | string | undefined;
 
 const isPlainObject = (value: TranslationValue): value is TranslationObject =>
   typeof value === "object" && value !== null && !Array.isArray(value);

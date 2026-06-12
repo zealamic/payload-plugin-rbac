@@ -1,7 +1,9 @@
 "use client";
 
 import { CheckboxInput } from "@payloadcms/ui";
+import { memo, useCallback } from "react";
 import { CONSTANTS } from "../../../lib/constants/index.js";
+import { useMatrixComponents } from "../context/matrix-components-context.js";
 import styles from "../matrix.module.scss";
 
 const { RBAC_PREFIX } = CONSTANTS.GENERAL;
@@ -9,29 +11,58 @@ const { RBAC_PREFIX } = CONSTANTS.GENERAL;
 type FeatureSelectAllCheckboxProps = {
   checkboxId: string;
   checkedStates: boolean[];
-  draftValue: Record<string, boolean>;
   featureID: string;
   featureLabel: string;
   isReadOnly: boolean;
-  onDraftChange: (draft: Record<string, boolean>) => void;
+  onDraftPermissionsChange: (updates: Record<string, boolean>) => void;
   permissionIDs: string[];
 };
 
-export const FeatureSelectAllCheckbox = ({
+export const FeatureSelectAllCheckbox = memo(function FeatureSelectAllCheckbox({
   checkboxId,
   checkedStates,
-  draftValue,
   featureID,
   featureLabel,
   isReadOnly,
-  onDraftChange,
+  onDraftPermissionsChange,
   permissionIDs,
-}: FeatureSelectAllCheckboxProps) => {
+}: FeatureSelectAllCheckboxProps) {
+  const { renderCheckbox } = useMatrixComponents();
   const inputID = `permission-matrix-select-all-${checkboxId}-${featureID}`;
   const hasPermissions = permissionIDs.length > 0;
   const allChecked = hasPermissions && checkedStates.every(Boolean);
   const someChecked = checkedStates.some(Boolean);
   const isIndeterminate = someChecked && !allChecked;
+  const readOnly = isReadOnly || !hasPermissions;
+
+  const handleToggle = useCallback(
+    (nextChecked: boolean) => {
+      const updates: Record<string, boolean> = {};
+
+      for (const permissionID of permissionIDs) {
+        updates[permissionID] = nextChecked;
+      }
+
+      onDraftPermissionsChange(updates);
+    },
+    [onDraftPermissionsChange, permissionIDs],
+  );
+
+  if (renderCheckbox) {
+    return (
+      <div className={styles[`${RBAC_PREFIX}-table-td-feature-container`]}>
+        {renderCheckbox({
+          checked: allChecked,
+          id: inputID,
+          label: featureLabel,
+          name: inputID,
+          onToggle: handleToggle,
+          partialChecked: isIndeterminate,
+          readOnly,
+        })}
+      </div>
+    );
+  }
 
   return (
     <div className={styles[`${RBAC_PREFIX}-table-td-feature-container`]}>
@@ -40,18 +71,10 @@ export const FeatureSelectAllCheckbox = ({
         id={inputID}
         label={featureLabel}
         name={inputID}
-        onToggle={(event) => {
-          const next = { ...draftValue };
-
-          for (const permissionID of permissionIDs) {
-            next[permissionID] = event.target.checked;
-          }
-
-          onDraftChange(next);
-        }}
+        onToggle={(event) => handleToggle(event.target.checked)}
         partialChecked={isIndeterminate}
-        readOnly={isReadOnly || !hasPermissions}
+        readOnly={readOnly}
       />
     </div>
   );
-};
+});

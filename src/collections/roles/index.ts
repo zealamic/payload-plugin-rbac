@@ -147,7 +147,9 @@ export const getRolesCollection = (params: RolesCollectionParams) => {
           ),
           admin: {
             components: {
-              Field: "@zealamic/payload-plugin-rbac/client#RolePermissionMatrixClient",
+              Field:
+                params.components?.rolePermissionMatrixField ??
+                "@zealamic/payload-plugin-rbac/client#RolePermissionMatrixClient",
             },
             condition: ((_, __, { operation }) => operation === "update") satisfies Condition,
           },

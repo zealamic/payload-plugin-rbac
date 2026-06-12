@@ -3,6 +3,11 @@ import type { DataScope } from "../../collections/roles/types.js";
 import { STATUS as PERMISSION_STATUS } from "../constants/permission.js";
 import { DATA_SCOPE, STATUS as ROLE_STATUS } from "../constants/role.js";
 import { PARENT_PATH_SEPARATOR } from "../constants/user.js";
+import {
+  getDataScopeOptionsCacheKey,
+  getPermissionCheckCacheKey,
+  getRBACRequestCache,
+} from "./access-cache.js";
 import { toID } from "./data.js";
 
 type UserRoleRef =
@@ -74,7 +79,7 @@ const pickWidestDataScope = (scopes: Array<DataScope | null | undefined>): DataS
  * Fallback super-admin check against persisted users data.
  * Use when session payload may be stale or missing `isSuperAdmin`.
  */
-const resolveSuperAdminFromUserID = async ({
+const resolveSuperAdminFromUserIDUncached = async ({
   req,
   user,
 }: {
@@ -106,12 +111,28 @@ const resolveSuperAdminFromUserID = async ({
   return userDocs.docs.length > 0;
 };
 
+const resolveSuperAdminFromUserID = async ({
+  req,
+  user,
+}: {
+  req: PayloadRequest;
+  user: RequestUser;
+}): Promise<boolean> => {
+  const cache = getRBACRequestCache(req);
+
+  if (!cache.superAdmin) {
+    cache.superAdmin = resolveSuperAdminFromUserIDUncached({ req, user });
+  }
+
+  return await cache.superAdmin;
+};
+
 /**
  * Resolve RBAC permission from role assignments:
  * 1) find active `permissions` by feature/action code
  * 2) check an enabled `roles-permissions` row for any user role
  */
-const resolvePermissionFromRoleID = async ({
+const resolvePermissionFromRoleIDUncached = async ({
   req,
   user,
   featureCode,
@@ -174,6 +195,44 @@ const resolvePermissionFromRoleID = async ({
   });
 
   return rolePermissions.docs.length > 0;
+};
+
+const resolvePermissionFromRoleID = async ({
+  req,
+  user,
+  featureCode,
+  actionCode,
+}: {
+  req: PayloadRequest;
+  user: RequestUser;
+  featureCode: string;
+  actionCode: string;
+}): Promise<boolean> => {
+  if (!user.id) {
+    return false;
+  }
+
+  const cache = getRBACRequestCache(req);
+  const cacheKey = getPermissionCheckCacheKey({
+    featureCode,
+    actionCode,
+    userId: user.id,
+  });
+  const cached = cache.permissionChecks.get(cacheKey);
+
+  if (cached) {
+    return cached;
+  }
+
+  const result = resolvePermissionFromRoleIDUncached({
+    req,
+    user,
+    featureCode,
+    actionCode,
+  });
+  cache.permissionChecks.set(cacheKey, result);
+
+  return await result;
 };
 
 /**
@@ -249,7 +308,7 @@ const getBasePermissionAccess = ({
  * Resolve effective data scope from active roles.
  * Widest scope wins: `all` > `hierarchy` > `own`.
  */
-export const resolveEffectiveDataScope = async (
+const resolveEffectiveDataScopeUncached = async (
   req: PayloadRequest,
   options: DataScopeOptions = {},
 ): Promise<DataScope> => {
@@ -298,11 +357,34 @@ export const resolveEffectiveDataScope = async (
   );
 };
 
+export const resolveEffectiveDataScope = async (
+  req: PayloadRequest,
+  options: DataScopeOptions = {},
+): Promise<DataScope> => {
+  const cache = getRBACRequestCache(req);
+  const optionsCacheKey = getDataScopeOptionsCacheKey(options);
+
+  if (!cache.effectiveDataScopeByOptions) {
+    cache.effectiveDataScopeByOptions = new Map();
+  }
+
+  const cached = cache.effectiveDataScopeByOptions.get(optionsCacheKey);
+
+  if (cached) {
+    return cached;
+  }
+
+  const result = resolveEffectiveDataScopeUncached(req, options);
+  cache.effectiveDataScopeByOptions.set(optionsCacheKey, result);
+
+  return await result;
+};
+
 /**
  * Collect visible user IDs for hierarchy scope:
  * current user + direct/indirect descendants from `parent` / `parentPath`.
  */
-export const getHierarchyVisibleUserIds = async (
+const getHierarchyVisibleUserIdsUncached = async (
   req: PayloadRequest,
   options: DataScopeOptions = {},
 ): Promise<string[]> => {
@@ -341,6 +423,24 @@ export const getHierarchyVisibleUserIds = async (
   }
 
   return [...ids];
+};
+
+export const getHierarchyVisibleUserIds = async (
+  req: PayloadRequest,
+  options: DataScopeOptions = {},
+): Promise<string[]> => {
+  const cache = getRBACRequestCache(req);
+  const optionsCacheKey = getDataScopeOptionsCacheKey(options);
+  const cached = cache.hierarchyVisibleUserIds.get(optionsCacheKey);
+
+  if (cached) {
+    return cached;
+  }
+
+  const result = getHierarchyVisibleUserIdsUncached(req, options);
+  cache.hierarchyVisibleUserIds.set(optionsCacheKey, result);
+
+  return await result;
 };
 
 /**

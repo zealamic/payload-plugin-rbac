@@ -13,7 +13,11 @@ import { usersDefaultTranslations } from "./collections/users/default-data.js";
 import { modifyUsersCollection } from "./collections/users/index.js";
 import { rolePermissionMatrixClientDefaultTranslations } from "./components/role-permission-matrix-client/default-data.js";
 
-import { getAllTranslationsOfSpecificObject, getMergedTranslations } from "./lib/utils/index.js";
+import {
+  getAllTranslationsOfSpecificObject,
+  getMergedTranslations,
+  type TranslationValue,
+} from "./lib/utils/index.js";
 import type {
   PayloadPluginRBACConfig,
   PermissionActionsCollectionTranslations,
@@ -81,6 +85,9 @@ export const payloadPluginRBAC =
     config.collections.push(
       getRolesCollection({
         ...pluginOptions.collections?.roles,
+        components: {
+          rolePermissionMatrixField: pluginOptions.components?.rolePermissionMatrixField,
+        },
         translations: getMergedTranslations({
           defaultTranslations: rolesDefaultTranslations,
           translations: getAllTranslationsOfSpecificObject<RolesCollectionTranslations>({
@@ -114,23 +121,6 @@ export const payloadPluginRBAC =
         }),
       })(config);
     }
-    // if (pluginOptions.collections) {
-    //   for (const collectionSlug in pluginOptions.collections) {
-    //     const collection = config.collections.find(
-    //       (collection) => collection.slug === collectionSlug,
-    //     );
-
-    //     if (collection) {
-    //       collection.fields.push({
-    //         name: "addedByPlugin",
-    //         type: "text",
-    //         admin: {
-    //           position: "sidebar",
-    //         },
-    //       });
-    //     }
-    //   }
-    // }
 
     /**
      * If the plugin is disabled, we still want to keep added collections/fields so the database schema is consistent which is important for migrations.
@@ -140,57 +130,12 @@ export const payloadPluginRBAC =
       return config;
     }
 
-    if (!config.endpoints) {
-      config.endpoints = [];
-    }
-
-    if (!config.admin) {
-      config.admin = {};
-    }
-
-    if (!config.admin.components) {
-      config.admin.components = {};
-    }
-
-    // if (!config.admin.components.beforeDashboard) {
-    //   config.admin.components.beforeDashboard = []
-    // }
-
-    // config.admin.components.beforeDashboard.push(
-    //   `payload-plugin-rbac/rsc#BeforeDashboardServer`,
-    // )
-
-    // config.endpoints.push({
-    //   handler: customEndpointHandler,
-    //   method: "get",
-    //   path: "/my-plugin-endpoint",
-    // })
-
     const incomingOnInit = config.onInit;
 
     config.onInit = async (payload) => {
-      // Ensure we are executing any existing onInit functions before running our own.
       if (incomingOnInit) {
         await incomingOnInit(payload);
       }
-
-      // const { totalDocs } = await payload.count({
-      //   collection: "plugin-collection",
-      //   where: {
-      //     id: {
-      //       equals: "seeded-by-plugin",
-      //     },
-      //   },
-      // });
-
-      // if (totalDocs === 0) {
-      //   await payload.create({
-      //     collection: "plugin-collection",
-      //     data: {
-      //       id: "seeded-by-plugin",
-      //     },
-      //   });
-      // }
     };
 
     if (!config.i18n) {
@@ -221,7 +166,7 @@ export const payloadPluginRBAC =
     });
 
     const finalTranslations = getMergedTranslations({
-      defaultTranslations: existingTranslations as Record<string, any>,
+      defaultTranslations: existingTranslations as Record<string, TranslationValue>,
       translations: mergedRBACTranslations,
     });
 

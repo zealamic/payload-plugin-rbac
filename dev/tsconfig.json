@@ -18,8 +18,7 @@
     "paths": {
       "@payload-config": ["./payload.config.ts"],
       "@zealamic/payload-plugin-rbac": ["../src/index.ts"],
-      "@zealamic/payload-plugin-rbac/client": ["../src/exports/client.ts"],
-      "@zealamic/payload-plugin-rbac/rsc": ["../src/exports/rsc.ts"]
+      "@zealamic/payload-plugin-rbac/client": ["../src/exports/client.ts"]
     },
     "noEmit": true,
     "emitDeclarationOnly": false

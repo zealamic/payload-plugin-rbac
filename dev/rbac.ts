@@ -1,6 +1,9 @@
-import { getPermissionAccess, payloadPluginRBAC } from "@zealamic/payload-plugin-rbac"
+import { getPermissionAccess, payloadPluginRBAC } from "@zealamic/payload-plugin-rbac";
 
 export const rbacPlugin = payloadPluginRBAC({
+  // components: {
+  //   rolePermissionMatrixField: "./components/role-permission-matrix-field#RolePermissionMatrixField",
+  // },
   autoModifyUsersCollection: true,
   collections: {
     // Demo: pass override params for each collection
@@ -114,4 +117,4 @@ export const rbacPlugin = payloadPluginRBAC({
       },
     },
   },
-})
+});

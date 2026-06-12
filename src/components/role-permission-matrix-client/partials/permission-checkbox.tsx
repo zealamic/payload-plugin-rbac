@@ -1,7 +1,9 @@
 "use client";
 import { CheckboxInput } from "@payloadcms/ui";
+import { memo } from "react";
 import type { PermissionAction } from "../../../collections/permission-actions/types.js";
 import { CONSTANTS } from "../../../lib/constants/index.js";
+import { useMatrixComponents } from "../context/matrix-components-context.js";
 import styles from "../matrix.module.scss";
 import {
   ROLE_PERMISSION_MATRIX_I18N_PREFIX,
@@ -14,52 +16,62 @@ type PermissionCheckboxProps = {
   action: PermissionAction;
   checkboxId: string;
   checked: boolean;
-  draftValue: Record<string, boolean>;
   featureID: string | number;
   isReadOnly: boolean;
   isSub?: boolean;
   matrixT: (key: RolePermissionMatrixTranslationKey) => string;
-  onDraftChange: (draft: Record<string, boolean>) => void;
+  onDraftPermissionChange: (permissionID: string, enabled: boolean) => void;
   permissionID: string;
 };
 
-export const PermissionCheckbox = ({
+export const PermissionCheckbox = memo(function PermissionCheckbox({
   action,
   checkboxId,
   checked,
-  draftValue,
   featureID,
   isReadOnly,
   isSub = false,
   matrixT,
-  onDraftChange,
+  onDraftPermissionChange,
   permissionID,
-}: PermissionCheckboxProps) => {
+}: PermissionCheckboxProps) {
+  const { renderCheckbox } = useMatrixComponents();
   const inputID = `permission-matrix-checkbox-${checkboxId}-${featureID}-${action.id}${isSub ? "-sub" : ""}`;
   const label =
     matrixT(`${ROLE_PERMISSION_MATRIX_I18N_PREFIX}:actions:${action.code}`) || String(action.id);
+  const containerClassName = isSub
+    ? styles[`${RBAC_PREFIX}-table-td-action-sub-action-container`]
+    : styles[`${RBAC_PREFIX}-table-td-action-container`];
+
+  if (renderCheckbox) {
+    return (
+      <div className={containerClassName}>
+        {renderCheckbox({
+          checked,
+          id: inputID,
+          label,
+          name: inputID,
+          onToggle: (nextChecked) => {
+            onDraftPermissionChange(permissionID, nextChecked);
+          },
+          readOnly: isReadOnly,
+        })}
+      </div>
+    );
+  }
 
   return (
-    <div
-      className={
-        isSub
-          ? styles[`${RBAC_PREFIX}-table-td-action-sub-action-container`]
-          : styles[`${RBAC_PREFIX}-table-td-action-container`]
-      }
-    >
+    <div className={containerClassName}>
       <CheckboxInput
         checked={checked}
         id={inputID}
         label={label}
         name={inputID}
         onToggle={(event) => {
-          onDraftChange({
-            ...draftValue,
-            [permissionID]: event.target.checked,
-          });
+          onDraftPermissionChange(permissionID, event.target.checked);
         }}
         readOnly={isReadOnly}
       />
     </div>
   );
-};
+});

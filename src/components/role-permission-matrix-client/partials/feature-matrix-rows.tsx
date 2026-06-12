@@ -1,4 +1,4 @@
-import { Fragment, useMemo } from "react";
+import { Fragment, memo, useMemo } from "react";
 import type { PermissionAction } from "../../../collections/permission-actions/types.js";
 import type { PermissionFeature } from "../../../collections/permission-features/types.js";
 import type { Permission } from "../../../collections/permissions/types.js";
@@ -15,7 +15,6 @@ import { PermissionCheckbox } from "./permission-checkbox.js";
 const { RBAC_PREFIX } = CONSTANTS.GENERAL;
 
 type FeatureMatrixRowsProps = {
-  isVisible?: boolean;
   checkboxId: string;
   draftValue: Record<string, boolean>;
   enabledByPermissionID: Map<string, boolean>;
@@ -23,7 +22,8 @@ type FeatureMatrixRowsProps = {
   isReadOnly: boolean;
   mainActions: PermissionAction[];
   matrixT: (key: RolePermissionMatrixTranslationKey) => string;
-  onDraftChange: (draft: Record<string, boolean>) => void;
+  onDraftPermissionChange: (permissionID: string, enabled: boolean) => void;
+  onDraftPermissionsChange: (updates: Record<string, boolean>) => void;
   permissionByFeatureAndAction: Map<string, Permission>;
   subActions: PermissionAction[];
 };
@@ -37,8 +37,7 @@ const resolveChecked = (
     ? draftValue[permissionID]
     : (enabledByPermissionID.get(permissionID) ?? false);
 
-export const FeatureMatrixRows = ({
-  isVisible = true,
+export const FeatureMatrixRows = memo(function FeatureMatrixRows({
   checkboxId,
   draftValue,
   enabledByPermissionID,
@@ -46,10 +45,11 @@ export const FeatureMatrixRows = ({
   isReadOnly,
   mainActions,
   matrixT,
-  onDraftChange,
+  onDraftPermissionChange,
+  onDraftPermissionsChange,
   permissionByFeatureAndAction,
   subActions,
-}: FeatureMatrixRowsProps) => {
+}: FeatureMatrixRowsProps) {
   const featureID = String(feature.id);
   const hasSubActions = subActions.length > 0;
   const featureActions = useMemo(() => [...mainActions, ...subActions], [mainActions, subActions]);
@@ -67,10 +67,6 @@ export const FeatureMatrixRows = ({
   const featureLabel =
     matrixT(`${ROLE_PERMISSION_MATRIX_I18N_PREFIX}:features:${feature.code}`) || String(feature.id);
 
-  if (!isVisible) {
-    return null;
-  }
-
   return (
     <Fragment key={featureID}>
       <tr>
@@ -78,11 +74,10 @@ export const FeatureMatrixRows = ({
           <FeatureSelectAllCheckbox
             checkboxId={checkboxId}
             checkedStates={featurePermissionCheckedStates}
-            draftValue={draftValue}
             featureID={featureID}
             featureLabel={featureLabel}
             isReadOnly={isReadOnly}
-            onDraftChange={onDraftChange}
+            onDraftPermissionsChange={onDraftPermissionsChange}
             permissionIDs={featurePermissionIDs}
           />
         </td>
@@ -114,11 +109,10 @@ export const FeatureMatrixRows = ({
                 action={action}
                 checkboxId={checkboxId}
                 checked={resolveChecked(permissionID, draftValue, enabledByPermissionID)}
-                draftValue={draftValue}
                 featureID={featureID}
                 isReadOnly={isReadOnly}
                 matrixT={matrixT}
-                onDraftChange={onDraftChange}
+                onDraftPermissionChange={onDraftPermissionChange}
                 permissionID={permissionID}
               />
             </td>
@@ -147,12 +141,11 @@ export const FeatureMatrixRows = ({
                   action={action}
                   checkboxId={checkboxId}
                   checked={resolveChecked(permissionID, draftValue, enabledByPermissionID)}
-                  draftValue={draftValue}
                   featureID={featureID}
                   isReadOnly={isReadOnly}
                   isSub
                   matrixT={matrixT}
-                  onDraftChange={onDraftChange}
+                  onDraftPermissionChange={onDraftPermissionChange}
                   permissionID={permissionID}
                 />
               );
@@ -162,4 +155,4 @@ export const FeatureMatrixRows = ({
       )}
     </Fragment>
   );
-};
+});

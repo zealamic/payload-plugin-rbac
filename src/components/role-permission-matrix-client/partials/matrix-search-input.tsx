@@ -3,6 +3,7 @@
 import { TextInput } from "@payloadcms/ui";
 import type { ChangeEvent } from "react";
 import { CONSTANTS } from "../../../lib/constants/index.js";
+import { useMatrixComponents } from "../context/matrix-components-context.js";
 import styles from "../matrix.module.scss";
 import {
   ROLE_PERMISSION_MATRIX_I18N_PREFIX,
@@ -20,7 +21,21 @@ type MatrixSearchInputProps = {
 };
 
 export const MatrixSearchInput = ({ matrixT, onChange, value }: MatrixSearchInputProps) => {
+  const { renderTextInput } = useMatrixComponents();
   const placeholder = matrixT(`${ROLE_PERMISSION_MATRIX_I18N_PREFIX}:search:placeholder`);
+
+  if (renderTextInput) {
+    return (
+      <>
+        {renderTextInput({
+          onChange,
+          path: SEARCH_INPUT_PATH,
+          placeholder,
+          value,
+        })}
+      </>
+    );
+  }
 
   return (
     <TextInput

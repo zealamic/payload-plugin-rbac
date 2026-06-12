@@ -1,27 +1,15 @@
 "use client";
-import {
-  useConfig,
-  useDocumentInfo,
-  useField,
-  useTranslation,
-} from "@payloadcms/ui";
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-  FC,
-} from "react";
+import { useConfig, useDocumentInfo, useField, useTranslation } from "@payloadcms/ui";
+import { FC, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import type { PermissionAction } from "../../collections/permission-actions/types.js";
 import type { PermissionFeature } from "../../collections/permission-features/types.js";
 import type { Permission } from "../../collections/permissions/types.js";
 import type { RolePermission } from "../../collections/roles-permissions/types.js";
 import { CONSTANTS } from "../../lib/constants/index.js";
 import { toID } from "../../lib/utils/data.js";
-
+import { MatrixComponentsProvider } from "./context/matrix-components-context.js";
 import {
+  arePermissionDraftsEqual,
   buildMainActions,
   buildPermissionByFeatureAndAction,
   buildSubActionsByFeatureID,
@@ -40,9 +28,8 @@ import {
 
 const { RBAC_PREFIX } = CONSTANTS.GENERAL;
 
-export const RolePermissionMatrixClient: FC<
-  RolePermissionMatrixClientProps
-> = () => {
+export const RolePermissionMatrixClient: FC<RolePermissionMatrixClientProps> = (props) => {
+  const matrixComponents = props.components ?? {};
   const checkboxId = useId();
   const { config } = useConfig();
   const apiBase = config?.routes?.api || "/api";
@@ -61,8 +48,7 @@ export const RolePermissionMatrixClient: FC<
   const [searchString, setSearchString] = useState("");
   const { t } = useTranslation();
   const matrixT = useCallback(
-    (key: RolePermissionMatrixTranslationKey) =>
-      t(key as Parameters<typeof t>[0]),
+    (key: RolePermissionMatrixTranslationKey) => t(key as Parameters<typeof t>[0]),
     [t],
   );
   const seededForRoleIdRef = useRef<string | null>(null);
@@ -100,9 +86,7 @@ export const RolePermissionMatrixClient: FC<
         }
 
         setError(
-          fetchError instanceof Error
-            ? fetchError.message
-            : "Failed to load permission matrix",
+          fetchError instanceof Error ? fetchError.message : "Failed to load permission matrix",
         );
       })
       .finally(() => {
@@ -141,23 +125,35 @@ export const RolePermissionMatrixClient: FC<
     value && typeof value === "object" && !Array.isArray(value) ? value : {}
   ) as Record<string, boolean>;
 
-  const onDraftChange = useCallback(
-    (draft: Record<string, boolean>) => {
-      setValue(draft);
+  const draftValueRef = useRef(draftValue);
+  draftValueRef.current = draftValue;
+
+  const onDraftPermissionChange = useCallback(
+    (permissionID: string, enabled: boolean) => {
+      setValue({
+        ...draftValueRef.current,
+        [permissionID]: enabled,
+      });
     },
     [setValue],
   );
 
-  const visibleFeaturesCount = useMemo(
-    () =>
-      features.filter((feature) =>
-        featureMatchesSearch(feature, searchString, matrixT),
-      ).length,
+  const onDraftPermissionsChange = useCallback(
+    (updates: Record<string, boolean>) => {
+      setValue({
+        ...draftValueRef.current,
+        ...updates,
+      });
+    },
+    [setValue],
+  );
+
+  const visibleFeatures = useMemo(
+    () => features.filter((feature) => featureMatchesSearch(feature, searchString, matrixT)),
     [features, matrixT, searchString],
   );
 
-  const showSearchEmptyRow =
-    searchString.trim().length > 0 && visibleFeaturesCount === 0;
+  const showSearchEmptyRow = searchString.trim().length > 0 && visibleFeatures.length === 0;
 
   useEffect(() => {
     if (!id || loading || error || permissions.length === 0) {
@@ -188,20 +184,23 @@ export const RolePermissionMatrixClient: FC<
         ? (value as Record<string, boolean>)
         : {};
 
-    seededForRoleIdRef.current = roleId;
-    setValue({
+    const nextDraft = {
       ...fromAllPermissions,
       ...fromRolesPermissions,
       ...fromDocument,
-    });
+    };
+
+    seededForRoleIdRef.current = roleId;
+
+    if (!arePermissionDraftsEqual(nextDraft, fromDocument)) {
+      setValue(nextDraft);
+    }
   }, [enabledByPermissionID, error, id, loading, permissions, setValue, value]);
 
   if (!id) {
     return (
       <div className={styles[`${RBAC_PREFIX}-component-placeholder`]}>
-        {matrixT(
-          `${ROLE_PERMISSION_MATRIX_I18N_PREFIX}:viewInUpdateScreenOnly:label`,
-        )}
+        {matrixT(`${ROLE_PERMISSION_MATRIX_I18N_PREFIX}:viewInUpdateScreenOnly:label`)}
       </div>
     );
   }
@@ -217,70 +216,60 @@ export const RolePermissionMatrixClient: FC<
   if (error) {
     return (
       <div className={styles[`${RBAC_PREFIX}-component-placeholder`]}>
-        {matrixT(`${ROLE_PERMISSION_MATRIX_I18N_PREFIX}:error:placeholder`)}
+        <p>{matrixT(`${ROLE_PERMISSION_MATRIX_I18N_PREFIX}:error:placeholder`)}</p>
+        <p>{error}</p>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className={styles[`${RBAC_PREFIX}-component-title`]}>
-        {matrixT(`${ROLE_PERMISSION_MATRIX_I18N_PREFIX}:title`)}
-        <MatrixSearchInput
-          matrixT={matrixT}
-          onChange={setSearchString}
-          value={searchString}
-        />
-      </div>
+    <MatrixComponentsProvider components={matrixComponents}>
+      <div>
+        <div className={styles[`${RBAC_PREFIX}-component-title`]}>
+          {matrixT(`${ROLE_PERMISSION_MATRIX_I18N_PREFIX}:title`)}
+          <MatrixSearchInput matrixT={matrixT} onChange={setSearchString} value={searchString} />
+        </div>
 
-      <div className={styles[`${RBAC_PREFIX}-table-container`]}>
-        <table className={styles[`${RBAC_PREFIX}-table`]}>
-          <thead>
-            <tr>
-              <th className={styles[`${RBAC_PREFIX}-table-th-feature`]}>
-                {matrixT(`${ROLE_PERMISSION_MATRIX_I18N_PREFIX}:featuresLabel`)}
-              </th>
-              <th
-                className={styles[`${RBAC_PREFIX}-table-th-action`]}
-                colSpan={mainActions.length}
-              >
-                {matrixT(`${ROLE_PERMISSION_MATRIX_I18N_PREFIX}:actionsLabel`)}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {showSearchEmptyRow ? (
-              <MatrixSearchEmptyRow
-                colSpan={mainActions.length + 1}
-                matrixT={matrixT}
-              />
-            ) : (
-              features.map((feature) => (
-                <FeatureMatrixRows
-                  key={String(feature.id)}
-                  checkboxId={checkboxId}
-                  draftValue={draftValue}
-                  enabledByPermissionID={enabledByPermissionID}
-                  feature={feature}
-                  isReadOnly={isReadOnly}
-                  isVisible={featureMatchesSearch(
-                    feature,
-                    searchString,
-                    matrixT,
-                  )}
-                  mainActions={mainActions}
-                  matrixT={matrixT}
-                  onDraftChange={onDraftChange}
-                  permissionByFeatureAndAction={permissionByFeatureAndAction}
-                  subActions={
-                    subActionsByFeatureID.get(String(feature.id)) ?? []
-                  }
-                />
-              ))
-            )}
-          </tbody>
-        </table>
+        <div className={styles[`${RBAC_PREFIX}-table-container`]}>
+          <table className={styles[`${RBAC_PREFIX}-table`]}>
+            <thead>
+              <tr>
+                <th className={styles[`${RBAC_PREFIX}-table-th-feature`]}>
+                  {matrixT(`${ROLE_PERMISSION_MATRIX_I18N_PREFIX}:featuresLabel`)}
+                </th>
+                <th
+                  className={styles[`${RBAC_PREFIX}-table-th-action`]}
+                  colSpan={mainActions.length}
+                >
+                  {matrixT(`${ROLE_PERMISSION_MATRIX_I18N_PREFIX}:actionsLabel`)}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {showSearchEmptyRow ? (
+                <MatrixSearchEmptyRow colSpan={mainActions.length + 1} matrixT={matrixT} />
+              ) : (
+                visibleFeatures.map((feature) => (
+                  <FeatureMatrixRows
+                    key={String(feature.id)}
+                    checkboxId={checkboxId}
+                    draftValue={draftValue}
+                    enabledByPermissionID={enabledByPermissionID}
+                    feature={feature}
+                    isReadOnly={isReadOnly}
+                    mainActions={mainActions}
+                    matrixT={matrixT}
+                    onDraftPermissionChange={onDraftPermissionChange}
+                    onDraftPermissionsChange={onDraftPermissionsChange}
+                    permissionByFeatureAndAction={permissionByFeatureAndAction}
+                    subActions={subActionsByFeatureID.get(String(feature.id)) ?? []}
+                  />
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </MatrixComponentsProvider>
   );
 };

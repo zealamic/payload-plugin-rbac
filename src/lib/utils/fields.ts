@@ -1,10 +1,38 @@
 import type { Field } from "payload";
 import { fieldAffectsData } from "payload/shared";
 
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const mergeFieldAdmin = (
+  defaultAdmin: Field["admin"] | undefined,
+  customAdmin: Field["admin"] | undefined,
+): Field["admin"] => {
+  if (!defaultAdmin) {
+    return customAdmin;
+  }
+
+  if (!customAdmin) {
+    return defaultAdmin;
+  }
+
+  const defaultComponents = isPlainObject(defaultAdmin.components) ? defaultAdmin.components : {};
+  const customComponents = isPlainObject(customAdmin.components) ? customAdmin.components : {};
+
+  return {
+    ...defaultAdmin,
+    ...customAdmin,
+    components: {
+      ...defaultComponents,
+      ...customComponents,
+    },
+  } as Field["admin"];
+};
+
 /**
  * Merges one plugin default field with a host override that shares the same `name`.
- * Custom properties win (`{ ...defaultField, ...customField }`). Non-data fields
- * (e.g. tabs, unnamed layout fields) are returned unchanged.
+ * Custom properties win; `admin` and `admin.components` are deep-merged.
+ * Non-data fields (e.g. tabs, unnamed layout fields) are returned unchanged.
  */
 export const getMergedFieldAffectingData = ({
   fields,
@@ -24,6 +52,7 @@ export const getMergedFieldAffectingData = ({
     return {
       ...defaultField,
       ...customField,
+      admin: mergeFieldAdmin(defaultField.admin, customField.admin),
     } as Field;
   }
 

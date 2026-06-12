@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 export const ROLE_PERMISSION_MATRIX_I18N_PREFIX = "components:rolePermissionMatrix" as const;
 
 export type RolePermissionMatrixTranslationKey =
@@ -36,4 +38,28 @@ export type RolePermissionMatrixClientTranslations = {
   };
 };
 
-export type RolePermissionMatrixClientProps = {};
+export type RolePermissionMatrixTextInputRenderProps = {
+  onChange: (value: string) => void;
+  path: string;
+  placeholder: string;
+  value: string;
+};
+
+export type RolePermissionMatrixCheckboxRenderProps = {
+  checked: boolean;
+  id: string;
+  label: string;
+  name: string;
+  onToggle: (checked: boolean) => void;
+  partialChecked?: boolean;
+  readOnly: boolean;
+};
+
+export type RolePermissionMatrixClientComponents = {
+  renderCheckbox?: (props: RolePermissionMatrixCheckboxRenderProps) => ReactNode;
+  renderTextInput?: (props: RolePermissionMatrixTextInputRenderProps) => ReactNode;
+};
+
+export type RolePermissionMatrixClientProps = {
+  components?: RolePermissionMatrixClientComponents;
+};

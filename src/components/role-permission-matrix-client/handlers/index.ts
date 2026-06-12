@@ -133,6 +133,7 @@ export const buildSubActionsByFeatureID = (
 ) => {
   const actionByID = new Map(actions.map((action) => [String(action.id), action]));
   const map = new Map<string, PermissionAction[]>();
+  const seenByFeatureID = new Map<string, Set<string>>();
 
   for (const permission of permissions) {
     const action = actionByID.get(toID(permission.permissionAction));
@@ -142,16 +143,43 @@ export const buildSubActionsByFeatureID = (
     }
 
     const featureID = toID(permission.permissionFeature);
-    const existing = map.get(featureID) ?? [];
+    let seen = seenByFeatureID.get(featureID);
 
-    if (!existing.some((entry) => entry.id === action.id)) {
-      existing.push(action);
+    if (!seen) {
+      seen = new Set();
+      seenByFeatureID.set(featureID, seen);
+      map.set(featureID, []);
     }
 
-    map.set(featureID, existing);
+    const actionID = String(action.id);
+
+    if (!seen.has(actionID)) {
+      seen.add(actionID);
+      map.get(featureID)?.push(action);
+    }
   }
 
   return map;
+};
+
+export const arePermissionDraftsEqual = (
+  left: Record<string, boolean>,
+  right: Record<string, boolean>,
+): boolean => {
+  const leftKeys = Object.keys(left);
+  const rightKeys = Object.keys(right);
+
+  if (leftKeys.length !== rightKeys.length) {
+    return false;
+  }
+
+  for (const key of leftKeys) {
+    if (left[key] !== right[key]) {
+      return false;
+    }
+  }
+
+  return true;
 };
 
 export const getFeaturePermissionIDs = (
