@@ -26,7 +26,7 @@ Render functions must live in a **client module** in your app. The plugin only s
 > ```bash
 > yarn dev
 > # or
-> yarn dev:payload
+> yarn payload
 > ```
 >
 > In your own app, use the equivalent dev command (`next dev`, `payload dev`, etc.).
