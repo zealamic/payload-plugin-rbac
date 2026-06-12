@@ -1,7 +1,7 @@
-import type { CollectionConfig } from "payload";
-import { getPermissionAccess } from "payload-auth-rbac-plugin";
+import type { CollectionConfig } from "payload"
+import { getPermissionAccess } from "@zealamic/payload-plugin-rbac"
 
-const FEATURE_CODE = "posts";
+const FEATURE_CODE = "posts"
 
 export const postsCollection: CollectionConfig = {
   slug: "posts",
@@ -70,11 +70,11 @@ export const postsCollection: CollectionConfig = {
           return {
             ...data,
             createdBy: req.user.id,
-          };
+          }
         }
 
-        return data;
+        return data
       },
     ],
   },
-};
+}

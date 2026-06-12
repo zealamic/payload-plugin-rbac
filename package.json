@@ -1,6 +1,6 @@
 {
   "name": "@zealamic/payload-plugin-rbac",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A plugin for Payload CMS to manage authentication and authorization",
   "license": "MIT",
   "type": "module",
@@ -34,11 +34,6 @@
       "import": "./dist/exports/client.js",
       "default": "./dist/exports/client.js"
     },
-    "./rsc": {
-      "types": "./dist/exports/rsc.d.ts",
-      "import": "./dist/exports/rsc.js",
-      "default": "./dist/exports/rsc.js"
-    },
     "./utils": {
       "types": "./dist/lib/utils/index.d.ts",
       "import": "./dist/lib/utils/index.js",
@@ -47,9 +42,7 @@
   },
   "main": "./dist/index.js",
   "types": "./dist/general-types.d.ts",
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "copy:styles": "node -e \"require('fs').cpSync('src/styles', 'dist/styles', {recursive:true})\"",
     "copy:general-types": "node -e \"require('fs').cpSync('src/general-types.d.ts', 'dist/general-types.d.ts', {recursive:true})\"",
@@ -64,8 +57,9 @@
     "dev:payload": "cross-env PAYLOAD_CONFIG_PATH=./dev/payload.config.ts TSX_TSCONFIG_PATH=./dev/tsconfig.json payload",
     "generate:importmap": "yarn dev:generate-importmap",
     "generate:types": "yarn dev:generate-types",
-    "lint": "biome check",
-    "lint:fix": "biome check --write",
+    "lint": "biome lint ./src/**/*.{ts,tsx}",
+    "lint:fix": "biome lint --write ./src",
+    "format": "biome format --write ./src",
     "prepublishOnly": "yarn clean && yarn build",
     "test": "yarn test:int && yarn test:e2e",
     "test:e2e": "playwright test",

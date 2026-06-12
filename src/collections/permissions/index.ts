@@ -8,16 +8,8 @@ import {
 } from "../../lib/utils/index.js";
 import type { PermissionsCollectionParams } from "./types.js";
 
-export const getPermissionsCollection = (
-  params: PermissionsCollectionParams,
-) => {
-  const {
-    translations = {},
-    access = {},
-    fields = [],
-    labels = {},
-    admin = {},
-  } = params || {};
+export const getPermissionsCollection = (params: PermissionsCollectionParams) => {
+  const { translations = {}, access = {}, fields = [], labels = {}, admin = {} } = params || {};
   const arrTranslationsKeys = Object.keys(translations);
   const permissions: CollectionConfig = {
     slug: "permissions",
@@ -26,25 +18,13 @@ export const getPermissionsCollection = (
         arrTranslationsKeys,
         (locale) => translations[locale]?.labels?.singular,
       ),
-      plural: toLocaleRecord(
-        arrTranslationsKeys,
-        (locale) => translations[locale]?.labels?.plural,
-      ),
+      plural: toLocaleRecord(arrTranslationsKeys, (locale) => translations[locale]?.labels?.plural),
       ...labels,
     },
     admin: {
-      group: toLocaleRecord(
-        arrTranslationsKeys,
-        (locale) => translations[locale]?.admin?.group,
-      ),
+      group: toLocaleRecord(arrTranslationsKeys, (locale) => translations[locale]?.admin?.group),
       useAsTitle: "name",
-      defaultColumns: [
-        "name",
-        "permissionFeature",
-        "permissionAction",
-        "status",
-        "updatedAt",
-      ],
+      defaultColumns: ["name", "permissionFeature", "permissionAction", "status", "updatedAt"],
       ...admin,
     },
     access: {
@@ -89,8 +69,7 @@ export const getPermissionsCollection = (
           admin: {
             placeholder: toSelectPlaceholder(
               arrTranslationsKeys,
-              (locale) =>
-                translations[locale]?.fields?.permissionFeature?.placeholder,
+              (locale) => translations[locale]?.fields?.permissionFeature?.placeholder,
             ),
           },
         },
@@ -106,8 +85,7 @@ export const getPermissionsCollection = (
           admin: {
             placeholder: toSelectPlaceholder(
               arrTranslationsKeys,
-              (locale) =>
-                translations[locale]?.fields?.permissionAction?.placeholder,
+              (locale) => translations[locale]?.fields?.permissionAction?.placeholder,
             ),
           },
         },
@@ -139,8 +117,7 @@ export const getPermissionsCollection = (
           options: Object.values(STATUS).map((status) => ({
             label: toLocaleRecord(
               arrTranslationsKeys,
-              (locale) =>
-                translations[locale]?.fields?.status?.[`${status}Label`],
+              (locale) => translations[locale]?.fields?.status?.[`${status}Label`],
             ),
             value: status,
           })),

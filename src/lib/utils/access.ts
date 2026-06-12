@@ -3,6 +3,11 @@ import type { DataScope } from "../../collections/roles/types.js";
 import { STATUS as PERMISSION_STATUS } from "../constants/permission.js";
 import { DATA_SCOPE, STATUS as ROLE_STATUS } from "../constants/role.js";
 import { PARENT_PATH_SEPARATOR } from "../constants/user.js";
+import {
+  getDataScopeOptionsCacheKey,
+  getPermissionCheckCacheKey,
+  getRBACRequestCache,
+} from "./access-cache.js";
 import { toID } from "./data.js";
 
 type UserRoleRef =
@@ -55,9 +60,7 @@ const hasInlineSuperAdmin = (user: RequestUser | null | undefined): boolean => {
   return Boolean(user.isSuperAdmin);
 };
 
-const pickWidestDataScope = (
-  scopes: Array<DataScope | null | undefined>,
-): DataScope => {
+const pickWidestDataScope = (scopes: Array<DataScope | null | undefined>): DataScope => {
   let widest: DataScope = DATA_SCOPE.OWN;
 
   for (const scope of scopes) {
@@ -76,7 +79,7 @@ const pickWidestDataScope = (
  * Fallback super-admin check against persisted users data.
  * Use when session payload may be stale or missing `isSuperAdmin`.
  */
-const resolveSuperAdminFromUserID = async ({
+const resolveSuperAdminFromUserIDUncached = async ({
   req,
   user,
 }: {
@@ -108,12 +111,28 @@ const resolveSuperAdminFromUserID = async ({
   return userDocs.docs.length > 0;
 };
 
+const resolveSuperAdminFromUserID = async ({
+  req,
+  user,
+}: {
+  req: PayloadRequest;
+  user: RequestUser;
+}): Promise<boolean> => {
+  const cache = getRBACRequestCache(req);
+
+  if (!cache.superAdmin) {
+    cache.superAdmin = resolveSuperAdminFromUserIDUncached({ req, user });
+  }
+
+  return await cache.superAdmin;
+};
+
 /**
  * Resolve RBAC permission from role assignments:
  * 1) find active `permissions` by feature/action code
  * 2) check an enabled `roles-permissions` row for any user role
  */
-const resolvePermissionFromRoleID = async ({
+const resolvePermissionFromRoleIDUncached = async ({
   req,
   user,
   featureCode,
@@ -178,6 +197,44 @@ const resolvePermissionFromRoleID = async ({
   return rolePermissions.docs.length > 0;
 };
 
+const resolvePermissionFromRoleID = async ({
+  req,
+  user,
+  featureCode,
+  actionCode,
+}: {
+  req: PayloadRequest;
+  user: RequestUser;
+  featureCode: string;
+  actionCode: string;
+}): Promise<boolean> => {
+  if (!user.id) {
+    return false;
+  }
+
+  const cache = getRBACRequestCache(req);
+  const cacheKey = getPermissionCheckCacheKey({
+    featureCode,
+    actionCode,
+    userId: user.id,
+  });
+  const cached = cache.permissionChecks.get(cacheKey);
+
+  if (cached) {
+    return cached;
+  }
+
+  const result = resolvePermissionFromRoleIDUncached({
+    req,
+    user,
+    featureCode,
+    actionCode,
+  });
+  cache.permissionChecks.set(cacheKey, result);
+
+  return await result;
+};
+
 /**
  * Access helper: allow only super admins.
  * Check session first, then persisted users data.
@@ -198,9 +255,10 @@ export const getSuperAdminAccess = async ({ req }: { req: PayloadRequest }) => {
 /**
  * Access helper: allow current document owner or super admin.
  */
-export const getAuthenticatedOrSuperAdminAccess:
-  | Access
-  | Promise<boolean> = async ({ req, id }) => {
+export const getAuthenticatedOrSuperAdminAccess: Access | Promise<boolean> = async ({
+  req,
+  id,
+}) => {
   const user = req.user as RequestUser | undefined;
   if (!user?.id) {
     return false;
@@ -250,7 +308,7 @@ const getBasePermissionAccess = ({
  * Resolve effective data scope from active roles.
  * Widest scope wins: `all` > `hierarchy` > `own`.
  */
-export const resolveEffectiveDataScope = async (
+const resolveEffectiveDataScopeUncached = async (
   req: PayloadRequest,
   options: DataScopeOptions = {},
 ): Promise<DataScope> => {
@@ -290,10 +348,7 @@ export const resolveEffectiveDataScope = async (
     pagination: false,
     req,
     where: {
-      and: [
-        { id: { in: roleIDs } },
-        { status: { equals: ROLE_STATUS.ACTIVE } },
-      ],
+      and: [{ id: { in: roleIDs } }, { status: { equals: ROLE_STATUS.ACTIVE } }],
     },
   });
 
@@ -302,16 +357,38 @@ export const resolveEffectiveDataScope = async (
   );
 };
 
+export const resolveEffectiveDataScope = async (
+  req: PayloadRequest,
+  options: DataScopeOptions = {},
+): Promise<DataScope> => {
+  const cache = getRBACRequestCache(req);
+  const optionsCacheKey = getDataScopeOptionsCacheKey(options);
+
+  if (!cache.effectiveDataScopeByOptions) {
+    cache.effectiveDataScopeByOptions = new Map();
+  }
+
+  const cached = cache.effectiveDataScopeByOptions.get(optionsCacheKey);
+
+  if (cached) {
+    return cached;
+  }
+
+  const result = resolveEffectiveDataScopeUncached(req, options);
+  cache.effectiveDataScopeByOptions.set(optionsCacheKey, result);
+
+  return await result;
+};
+
 /**
  * Collect visible user IDs for hierarchy scope:
  * current user + direct/indirect descendants from `parent` / `parentPath`.
  */
-export const getHierarchyVisibleUserIds = async (
+const getHierarchyVisibleUserIdsUncached = async (
   req: PayloadRequest,
   options: DataScopeOptions = {},
 ): Promise<string[]> => {
-  const usersCollectionSlug =
-    options.usersCollectionSlug ?? DEFAULT_USERS_COLLECTION;
+  const usersCollectionSlug = options.usersCollectionSlug ?? DEFAULT_USERS_COLLECTION;
   const user = req.user as RequestUser | undefined;
   const userId = user?.id;
 
@@ -346,6 +423,24 @@ export const getHierarchyVisibleUserIds = async (
   }
 
   return [...ids];
+};
+
+export const getHierarchyVisibleUserIds = async (
+  req: PayloadRequest,
+  options: DataScopeOptions = {},
+): Promise<string[]> => {
+  const cache = getRBACRequestCache(req);
+  const optionsCacheKey = getDataScopeOptionsCacheKey(options);
+  const cached = cache.hierarchyVisibleUserIds.get(optionsCacheKey);
+
+  if (cached) {
+    return cached;
+  }
+
+  const result = getHierarchyVisibleUserIdsUncached(req, options);
+  cache.hierarchyVisibleUserIds.set(optionsCacheKey, result);
+
+  return await result;
 };
 
 /**
@@ -396,18 +491,15 @@ const getCreatedById = (
   return toID(value as UserRoleRef) || undefined;
 };
 
-const isUsersCollection = (
-  collectionSlug: string,
-  usersCollectionSlug: string,
-) => collectionSlug === usersCollectionSlug;
+const isUsersCollection = (collectionSlug: string, usersCollectionSlug: string) =>
+  collectionSlug === usersCollectionSlug;
 
 /**
  * Guard for privileged user documents.
  * Non-super-admins cannot mutate users where `isSuperAdmin === true`.
  */
-export const isProtectedSuperAdminUserDoc = (
-  doc: Record<string, unknown>,
-): boolean => Boolean(doc.isSuperAdmin);
+export const isProtectedSuperAdminUserDoc = (doc: Record<string, unknown>): boolean =>
+  Boolean(doc.isSuperAdmin);
 
 /**
  * Document-level access check:
@@ -431,8 +523,7 @@ export const canAccessDocumentByDataScope = async ({
 }): Promise<boolean> => {
   const user = req.user as RequestUser | undefined;
   const createdByField = options.createdByField ?? DEFAULT_CREATED_BY_FIELD;
-  const usersCollectionSlug =
-    options.usersCollectionSlug ?? DEFAULT_USERS_COLLECTION;
+  const usersCollectionSlug = options.usersCollectionSlug ?? DEFAULT_USERS_COLLECTION;
 
   if (!user?.id) {
     return false;
@@ -485,10 +576,7 @@ export const canAccessDocumentByDataScope = async ({
 /**
  * Merge an existing `where` with scope-derived constraints.
  */
-export const mergeDataScopeWhere = (
-  base: Where | undefined,
-  scopeWhere: Where | true,
-): Where => {
+export const mergeDataScopeWhere = (base: Where | undefined, scopeWhere: Where | true): Where => {
   if (scopeWhere === true) {
     return base ?? {};
   }

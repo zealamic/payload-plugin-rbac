@@ -8,16 +8,8 @@ import {
 } from "../../lib/utils/index.js";
 import type { PermissionActionsCollectionParams } from "./types.js";
 
-export const getPermissionActionsCollection = (
-  params: PermissionActionsCollectionParams,
-) => {
-  const {
-    translations = {},
-    access = {},
-    fields = [],
-    labels = {},
-    admin = {},
-  } = params || {};
+export const getPermissionActionsCollection = (params: PermissionActionsCollectionParams) => {
+  const { translations = {}, access = {}, fields = [], labels = {}, admin = {} } = params || {};
   const arrTranslationsKeys = Object.keys(translations);
   const permissionActions: CollectionConfig = {
     slug: "permission-actions",
@@ -26,17 +18,11 @@ export const getPermissionActionsCollection = (
         arrTranslationsKeys,
         (locale) => translations[locale]?.labels?.singular,
       ),
-      plural: toLocaleRecord(
-        arrTranslationsKeys,
-        (locale) => translations[locale]?.labels?.plural,
-      ),
+      plural: toLocaleRecord(arrTranslationsKeys, (locale) => translations[locale]?.labels?.plural),
       ...labels,
     },
     admin: {
-      group: toLocaleRecord(
-        arrTranslationsKeys,
-        (locale) => translations[locale]?.admin?.group,
-      ),
+      group: toLocaleRecord(arrTranslationsKeys, (locale) => translations[locale]?.admin?.group),
       useAsTitle: "code",
       defaultColumns: ["code", "type", "status", "updatedAt"],
       ...admin,
@@ -123,8 +109,7 @@ export const getPermissionActionsCollection = (
           options: Object.values(STATUS).map((status) => ({
             label: toLocaleRecord(
               arrTranslationsKeys,
-              (locale) =>
-                translations[locale]?.fields?.status?.[`${status}Label`],
+              (locale) => translations[locale]?.fields?.status?.[`${status}Label`],
             ),
             value: status,
           })),

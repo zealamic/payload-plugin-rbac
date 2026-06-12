@@ -5,10 +5,7 @@ import {
   toLocaleRecord,
 } from "../../lib/utils/index.js";
 import { mergeUserCollectionHooks } from "./parent-path.js";
-import type {
-  UsersModificationParams,
-  UsersModificationTranslations,
-} from "./types.js";
+import type { UsersModificationParams, UsersModificationTranslations } from "./types.js";
 
 const buildDefaultFields = (
   translations: UsersModificationTranslations,
@@ -20,10 +17,7 @@ const buildDefaultFields = (
       name: "isSuperAdmin",
       type: "checkbox",
       defaultValue: false,
-      label: toLocaleRecord(
-        locales,
-        (locale) => translations[locale]?.fields?.isSuperAdmin?.label,
-      ),
+      label: toLocaleRecord(locales, (locale) => translations[locale]?.fields?.isSuperAdmin?.label),
       admin: {
         readOnly: true,
       },
@@ -33,20 +27,14 @@ const buildDefaultFields = (
       type: "relationship",
       relationTo: "roles",
       hasMany: true,
-      label: toLocaleRecord(
-        locales,
-        (locale) => translations[locale]?.fields?.roles?.label,
-      ),
+      label: toLocaleRecord(locales, (locale) => translations[locale]?.fields?.roles?.label),
     },
     {
       name: "parent",
       type: "relationship",
       relationTo: userSlug,
       hasMany: false,
-      label: toLocaleRecord(
-        locales,
-        (locale) => translations[locale]?.fields?.parent?.label,
-      ),
+      label: toLocaleRecord(locales, (locale) => translations[locale]?.fields?.parent?.label),
       filterOptions: ({ id }) => (id ? { id: { not_equals: id } } : true),
     },
     {
@@ -78,9 +66,7 @@ export const modifyUsersCollection = (params: UsersModificationParams = {}) => {
       fields: customFields,
     });
 
-    const existing = (config.collections || []).find(
-      (c) => c.slug === userSlug,
-    );
+    const existing = (config.collections || []).find((c) => c.slug === userSlug);
 
     const dataScopeOptions = {
       createdByField: "id",
