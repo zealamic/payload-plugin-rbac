@@ -3,7 +3,7 @@
 Customize Admin labels, placeholders, select options, and permission-matrix UI text via the plugin `translations` option.
 
 ```ts
-import type { RBACTranslations } from "@zealamic/payload-plugin-rbac/types";
+import type { RBACTranslations } from "@zealamic/payload-plugin-rbac";
 import { payloadPluginRBAC } from "@zealamic/payload-plugin-rbac";
 
 export default buildConfig({
@@ -95,6 +95,8 @@ type RBACTranslations = {
   };
 };
 ```
+
+`MatrixTranslations` matches `RolePermissionMatrixClientTranslations[string]` — see [Permission matrix UI](#permission-matrix-ui).
 
 ### Collection config keys (camelCase)
 
@@ -191,9 +193,36 @@ All keys are optional. Defaults live in `src/collections/*/default-data.ts`.
 | `code`, `name`, `description` | `label`, `placeholder`                                                           |
 | `status`                      | `label`, `placeholder`, `activeLabel`, `inactiveLabel`                           |
 | `dataScope`                   | `label`, `placeholder`, `ownLabel`, `hierarchyLabel`, `allLabel`                 |
-| `permissionMatrix`            | `label`, `placeholder` — **label only** for schema field `permissionMatrixDraft` |
+| `permissionMatrix`            | `label`, `placeholder` — labels the schema field `permissionMatrixDraft` in Admin |
 
-> **Field name vs translation key:** schema field = `permissionMatrixDraft`; translation key = `permissionMatrix`. For `collections.roles.fields` overrides, use schema name `permissionMatrixDraft`.
+> **Translation key vs schema field name**
+>
+> | Context | Name |
+> | ------- | ---- |
+> | `translations.*.collections.roles.fields` | `permissionMatrix` |
+> | Collection schema / `collections.roles.fields` override | `permissionMatrixDraft` (`type: "json"`) |
+
+When overriding the matrix field via `payloadPluginRBAC({ collections: { roles: { fields: [...] } } })`, use the **schema** name:
+
+```ts
+payloadPluginRBAC({
+  collections: {
+    roles: {
+      fields: [
+        {
+          name: "permissionMatrixDraft",
+          type: "json",
+          admin: {
+            condition: (_, __, { operation }) => operation === "update",
+          },
+        },
+      ],
+    },
+  },
+});
+```
+
+Field overrides are shallow-merged at the top level; `admin` and `admin.components` are deep-merged — you can override `admin.condition` without losing the default `Field` component.
 
 ### `rolesPermissions`
 
@@ -220,15 +249,20 @@ No collection `labels` — the users collection belongs to your app.
 
 Registered as Payload i18n keys: `components:rolePermissionMatrix:…`
 
-| Key                            | Description                                                     |
-| ------------------------------ | --------------------------------------------------------------- |
-| `title`                        | Matrix heading                                                  |
-| `viewInUpdateScreenOnly.label` | Shown on create screen                                          |
-| `loading.placeholder`          | Loading state                                                   |
-| `featuresLabel`                | Features column header                                          |
-| `features.{code}`              | Label for main feature with matching `permission-features.code` |
-| `actionsLabel`                 | Actions column header                                           |
-| `actions.{code}`               | Label for main action with matching `permission-actions.code`   |
+### Static keys
+
+| Config key                     | i18n key suffix                    | Description                          |
+| ------------------------------ | ---------------------------------- | ------------------------------------ |
+| `title`                        | `title`                            | Matrix heading                       |
+| `viewInUpdateScreenOnly.label` | `viewInUpdateScreenOnly:label`     | Shown on create screen (no role `id`) |
+| `loading.placeholder`          | `loading:placeholder`              | Loading state                        |
+| `error.placeholder`            | `error:placeholder`                | Generic error heading when fetch fails |
+| `featuresLabel`                | `featuresLabel`                    | Features column header               |
+| `actionsLabel`                 | `actionsLabel`                     | Actions column header                |
+| `search.placeholder`           | `search:placeholder`               | Feature search input placeholder     |
+| `search.noResults`             | `search:noResults`                 | Empty state when search has no match |
+
+On fetch failure, the UI shows `error.placeholder` plus the underlying error message.
 
 ### Features (dynamic)
 
@@ -240,18 +274,14 @@ components:rolePermissionMatrix:features:{featureCode}
 
 `{featureCode}` must match **`permission-features.code` exactly** (case-sensitive).
 
-Add one key per feature code under `translations.<locale>.components.rolePermissionMatrix.features`:
-
 ```ts
 payloadPluginRBAC({
   translations: {
     en: {
       components: {
         rolePermissionMatrix: {
-          // ... others
           featuresLabel: "Features",
           features: {
-            label: "Features",
             users: "Users", // permission-features.code = "users" (plugin default)
             posts: "Posts", // permission-features.code = "posts"
           },
@@ -262,11 +292,13 @@ payloadPluginRBAC({
 });
 ```
 
-If a key is missing, the UI falls back to `feature.id` (not `feature.code`).
+**Fallback:** `permission-features.code`, then `feature.id`.
 
-### Main action labels (dynamic)
+Search matches translated feature label and raw `feature.code`.
 
-Main actions (`type: "main"`) resolve checkbox labels via:
+### Action labels (dynamic — main and sub)
+
+Both **main** (`type: "main"`) and **sub** (`type: "sub"`) actions resolve checkbox labels via:
 
 ```
 components:rolePermissionMatrix:actions:{actionCode}
@@ -280,14 +312,14 @@ payloadPluginRBAC({
     en: {
       components: {
         rolePermissionMatrix: {
-          // ... others
           actionsLabel: "Actions",
           actions: {
-            create: "Create", // permission-actions.code = "create" (plugin default)
+            create: "Create",
             read: "Read",
             update: "Update",
             delete: "Delete",
-            publish: "Publish", // permission-actions.code = "publish" (custom)
+            publish: "Publish", // custom permission-actions.code
+            approveDraft: "Approve draft", // sub-action example
           },
         },
       },
@@ -296,13 +328,30 @@ payloadPluginRBAC({
 });
 ```
 
-If a key is missing, the UI falls back to `action.id` (not `action.code`).
+**Fallback:** `action.id` (when no translation key exists).
 
-### Sub-action labels (limitation)
+---
 
-Sub-actions (`type: "sub"`) **do not** use `useTranslation` — the UI shows raw `permission-actions.code`.
+## Custom matrix field component (not translations)
 
-**Workaround:** use readable codes when creating sub-actions (`approveDraft`, not `ad`).
+Matrix **text** comes from `translations` above. To swap checkbox/search **renderers**, use a client field component — render functions cannot be passed through server plugin config.
+
+**Option A — plugin shorthand:**
+
+```ts
+payloadPluginRBAC({
+  components: {
+    rolePermissionMatrixField:
+      "./components/role-permission-matrix-field#RolePermissionMatrixField",
+  },
+});
+```
+
+**Option B — `collections.roles.fields` override** (same as other field overrides; include `type: "json"`).
+
+The wrapper should pass `components` to `RolePermissionMatrixClient` or use `createRolePermissionMatrixClient()` from `@zealamic/payload-plugin-rbac/client`. See `dev/components/role-permission-matrix-field.tsx`.
+
+Default field when unset: `@zealamic/payload-plugin-rbac/client#RolePermissionMatrixClient`.
 
 ---
 
@@ -333,6 +382,9 @@ payloadPluginRBAC({
       components: {
         rolePermissionMatrix: {
           title: "Permission Matrix",
+          search: {
+            placeholder: "Filter features…",
+          },
         },
       },
     },
@@ -395,17 +447,21 @@ export default buildConfig({
             rolePermissionMatrix: {
               title: "Ma trận quyền",
               loading: { placeholder: "Đang tải..." },
+              error: { placeholder: "Không tải được ma trận quyền." },
               featuresLabel: "Tính năng",
               features: {
-                // Mã tính năng của permission-features
+                posts: "Bài viết",
               },
               actionsLabel: "Hành động",
+              search: {
+                placeholder: "Tìm tính năng…",
+                noResults: "Không có tính năng phù hợp.",
+              },
               actions: {
                 create: "Tạo",
                 read: "Xem",
                 update: "Sửa",
                 delete: "Xóa",
-                // Mã hành đông của permission-features
               },
             },
           },
@@ -423,12 +479,14 @@ Working demo: `dev/rbac.ts`.
 ## TypeScript
 
 ```ts
-import type { RBACTranslations } from "@zealamic/payload-plugin-rbac/types";
-
-// Per-collection types (value for one locale):
-import type { RolesCollectionTranslations } from "@zealamic/payload-plugin-rbac/types";
-import type { RolePermissionMatrixClientTranslations } from "@zealamic/payload-plugin-rbac/types";
+import type {
+  RBACTranslations,
+  RolePermissionMatrixClientTranslations,
+  RolesCollectionTranslations,
+} from "@zealamic/payload-plugin-rbac";
 ```
+
+Per-locale matrix strings: `RolePermissionMatrixClientTranslations["en"]`.
 
 ---
 
@@ -446,6 +504,8 @@ Shipped defaults (override via `translations.en`):
 | `src/collections/users/default-data.ts`                        | User fields           |
 | `src/components/role-permission-matrix-client/default-data.ts` | Matrix UI             |
 
+Default matrix UI includes `search`, `error`, and `features.users` / CRUD `actions` keys.
+
 ---
 
 ## Quick reference
@@ -454,11 +514,14 @@ Shipped defaults (override via `translations.en`):
 | ------------------------ | --------------------------------------------------------------------------- |
 | Sidebar group            | `translations.<locale>.collections.<key>.admin.group`                       |
 | Collection name          | `…labels.singular` / `…labels.plural`                                       |
-| Field label              | `…fields.<fieldName>.label`                                                 |
+| Field label (roles matrix) | `…collections.roles.fields.permissionMatrix.label`                        |
+| Field override in schema | Use **`permissionMatrixDraft`** + `type: "json"`                            |
 | Select option            | `…fields.<fieldName>.<value>Label`                                          |
 | Matrix title             | `…components.rolePermissionMatrix.title`                                    |
-| Matrix action column     | `…components.rolePermissionMatrix.actions.<code>`                           |
-| Override field in schema | Use **schema field name** (`permissionMatrixDraft`, not `permissionMatrix`) |
+| Matrix search            | `…components.rolePermissionMatrix.search.placeholder`                       |
+| Feature row label        | `…components.rolePermissionMatrix.features.<code>`                          |
+| Action checkbox label    | `…components.rolePermissionMatrix.actions.<code>` (main and sub)            |
+| Custom field component   | `components.rolePermissionMatrixField` or `collections.roles.fields` override |
 
 ---
 
