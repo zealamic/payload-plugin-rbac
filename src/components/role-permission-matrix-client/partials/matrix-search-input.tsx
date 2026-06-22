@@ -2,15 +2,13 @@
 
 import { TextInput } from "@payloadcms/ui";
 import type { ChangeEvent } from "react";
-import { CONSTANTS } from "../../../lib/constants/index.js";
 import { useMatrixComponents } from "../context/matrix-components-context.js";
 import styles from "../matrix.module.scss";
+import { PERMISSION_MATRIX_BLOCK } from "../matrix-block.js";
 import {
   ROLE_PERMISSION_MATRIX_I18N_PREFIX,
   type RolePermissionMatrixTranslationKey,
 } from "../types.js";
-
-const { RBAC_PREFIX } = CONSTANTS.GENERAL;
 
 const SEARCH_INPUT_PATH = "permission-matrix-search";
 
@@ -39,7 +37,7 @@ export const MatrixSearchInput = ({ matrixT, onChange, value }: MatrixSearchInpu
 
   return (
     <TextInput
-      className={styles[`${RBAC_PREFIX}-component-search`]}
+      className={styles[`${PERMISSION_MATRIX_BLOCK}__search`]}
       onChange={(event: ChangeEvent<HTMLInputElement>) => onChange(event.target.value)}
       path={SEARCH_INPUT_PATH}
       placeholder={placeholder}

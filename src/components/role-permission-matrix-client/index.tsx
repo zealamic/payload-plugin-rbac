@@ -5,7 +5,6 @@ import type { PermissionAction } from "../../collections/permission-actions/type
 import type { PermissionFeature } from "../../collections/permission-features/types.js";
 import type { Permission } from "../../collections/permissions/types.js";
 import type { RolePermission } from "../../collections/roles-permissions/types.js";
-import { CONSTANTS } from "../../lib/constants/index.js";
 import { toID } from "../../lib/utils/data.js";
 import { MatrixComponentsProvider } from "./context/matrix-components-context.js";
 import {
@@ -15,8 +14,9 @@ import {
   buildSubActionsByFeatureID,
   featureMatchesSearch,
   fetchAllPermissionData,
-} from "./handlers/index.js";
+} from "./handlers.js";
 import styles from "./matrix.module.scss";
+import { PERMISSION_MATRIX_BLOCK } from "./matrix-block.js";
 import { FeatureMatrixRows } from "./partials/feature-matrix-rows.js";
 import { MatrixSearchEmptyRow } from "./partials/matrix-search-empty-row.js";
 import { MatrixSearchInput } from "./partials/matrix-search-input.js";
@@ -25,8 +25,6 @@ import {
   type RolePermissionMatrixClientProps,
   type RolePermissionMatrixTranslationKey,
 } from "./types.js";
-
-const { RBAC_PREFIX } = CONSTANTS.GENERAL;
 
 export const RolePermissionMatrixClient: FC<RolePermissionMatrixClientProps> = (props) => {
   const matrixComponents = props.components ?? {};
@@ -199,7 +197,7 @@ export const RolePermissionMatrixClient: FC<RolePermissionMatrixClientProps> = (
 
   if (!id) {
     return (
-      <div className={styles[`${RBAC_PREFIX}-component-placeholder`]}>
+      <div className={styles[`${PERMISSION_MATRIX_BLOCK}__placeholder`]}>
         {matrixT(`${ROLE_PERMISSION_MATRIX_I18N_PREFIX}:viewInUpdateScreenOnly:label`)}
       </div>
     );
@@ -207,7 +205,7 @@ export const RolePermissionMatrixClient: FC<RolePermissionMatrixClientProps> = (
 
   if (loading) {
     return (
-      <div className={styles[`${RBAC_PREFIX}-component-placeholder`]}>
+      <div className={styles[`${PERMISSION_MATRIX_BLOCK}__placeholder`]}>
         {matrixT(`${ROLE_PERMISSION_MATRIX_I18N_PREFIX}:loading:placeholder`)}
       </div>
     );
@@ -215,7 +213,7 @@ export const RolePermissionMatrixClient: FC<RolePermissionMatrixClientProps> = (
 
   if (error) {
     return (
-      <div className={styles[`${RBAC_PREFIX}-component-placeholder`]}>
+      <div className={styles[`${PERMISSION_MATRIX_BLOCK}__placeholder`]}>
         <p>{matrixT(`${ROLE_PERMISSION_MATRIX_I18N_PREFIX}:error:placeholder`)}</p>
         <p>{error}</p>
       </div>
@@ -225,20 +223,20 @@ export const RolePermissionMatrixClient: FC<RolePermissionMatrixClientProps> = (
   return (
     <MatrixComponentsProvider components={matrixComponents}>
       <div>
-        <div className={styles[`${RBAC_PREFIX}-component-title`]}>
+        <div className={styles[`${PERMISSION_MATRIX_BLOCK}__title`]}>
           {matrixT(`${ROLE_PERMISSION_MATRIX_I18N_PREFIX}:title`)}
           <MatrixSearchInput matrixT={matrixT} onChange={setSearchString} value={searchString} />
         </div>
 
-        <div className={styles[`${RBAC_PREFIX}-table-container`]}>
-          <table className={styles[`${RBAC_PREFIX}-table`]}>
+        <div className={styles[`${PERMISSION_MATRIX_BLOCK}__table-container`]}>
+          <table className={styles[`${PERMISSION_MATRIX_BLOCK}__table`]}>
             <thead>
               <tr>
-                <th className={styles[`${RBAC_PREFIX}-table-th-feature`]}>
+                <th className={styles[`${PERMISSION_MATRIX_BLOCK}__th--feature`]}>
                   {matrixT(`${ROLE_PERMISSION_MATRIX_I18N_PREFIX}:featuresLabel`)}
                 </th>
                 <th
-                  className={styles[`${RBAC_PREFIX}-table-th-action`]}
+                  className={styles[`${PERMISSION_MATRIX_BLOCK}__th--action`]}
                   colSpan={mainActions.length}
                 >
                   {matrixT(`${ROLE_PERMISSION_MATRIX_I18N_PREFIX}:actionsLabel`)}

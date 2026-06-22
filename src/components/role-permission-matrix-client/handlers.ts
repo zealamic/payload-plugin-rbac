@@ -1,19 +1,19 @@
-import type { PermissionAction } from "../../../collections/permission-actions/types.js";
-import type { PermissionFeature } from "../../../collections/permission-features/types.js";
-import type { Permission } from "../../../collections/permissions/types.js";
-import type { RolePermission } from "../../../collections/roles-permissions/types.js";
-import { STATUS as PERMISSION_STATUS } from "../../../lib/constants/permission.js";
+import type { PermissionAction } from "./../../collections/permission-actions/types.js";
+import type { PermissionFeature } from "./../../collections/permission-features/types.js";
+import type { Permission } from "./../../collections/permissions/types.js";
+import type { RolePermission } from "./../../collections/roles-permissions/types.js";
+import { STATUS as PERMISSION_STATUS } from "./../../lib/constants/permission.js";
 import {
   STATUS as PERMISSION_ACTION_STATUS,
   TYPE,
-} from "../../../lib/constants/permission-action.js";
-import { STATUS as PERMISSION_FEATURE_STATUS } from "../../../lib/constants/permission-feature.js";
-import { toID } from "../../../lib/utils/data.js";
-import type { ApiListResponse } from "../../../types.js";
+} from "./../../lib/constants/permission-action.js";
+import { STATUS as PERMISSION_FEATURE_STATUS } from "./../../lib/constants/permission-feature.js";
+import { toID } from "./../../lib/utils/data.js";
+import type { ApiListResponse } from "./../../types.js";
 import {
   ROLE_PERMISSION_MATRIX_I18N_PREFIX,
   type RolePermissionMatrixTranslationKey,
-} from "../types.js";
+} from "./types.js";
 
 export type PermissionMatrixData = {
   actions: PermissionAction[];
@@ -132,8 +132,7 @@ export const buildSubActionsByFeatureID = (
   permissions: Permission[],
 ) => {
   const actionByID = new Map(actions.map((action) => [String(action.id), action]));
-  const map = new Map<string, PermissionAction[]>();
-  const seenByFeatureID = new Map<string, Set<string>>();
+  const subActionIDsByFeatureID = new Map<string, Set<string>>();
 
   for (const permission of permissions) {
     const action = actionByID.get(toID(permission.permissionAction));
@@ -143,20 +142,23 @@ export const buildSubActionsByFeatureID = (
     }
 
     const featureID = toID(permission.permissionFeature);
-    let seen = seenByFeatureID.get(featureID);
+    let actionIDs = subActionIDsByFeatureID.get(featureID);
 
-    if (!seen) {
-      seen = new Set();
-      seenByFeatureID.set(featureID, seen);
-      map.set(featureID, []);
+    if (!actionIDs) {
+      actionIDs = new Set();
+      subActionIDsByFeatureID.set(featureID, actionIDs);
     }
 
-    const actionID = String(action.id);
+    actionIDs.add(String(action.id));
+  }
 
-    if (!seen.has(actionID)) {
-      seen.add(actionID);
-      map.get(featureID)?.push(action);
-    }
+  const map = new Map<string, PermissionAction[]>();
+
+  for (const [featureID, actionIDs] of subActionIDsByFeatureID) {
+    map.set(
+      featureID,
+      actions.filter((action) => action.type === TYPE.SUB && actionIDs.has(String(action.id))),
+    );
   }
 
   return map;

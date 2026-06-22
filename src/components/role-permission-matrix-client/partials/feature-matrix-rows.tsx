@@ -2,17 +2,15 @@ import { Fragment, memo, useMemo } from "react";
 import type { PermissionAction } from "../../../collections/permission-actions/types.js";
 import type { PermissionFeature } from "../../../collections/permission-features/types.js";
 import type { Permission } from "../../../collections/permissions/types.js";
-import { CONSTANTS } from "../../../lib/constants/index.js";
-import { getFeaturePermissionIDs, permissionLookupKey } from "../handlers/index.js";
+import { getFeaturePermissionIDs, permissionLookupKey } from "../handlers.js";
 import styles from "../matrix.module.scss";
+import { PERMISSION_MATRIX_BLOCK } from "../matrix-block.js";
 import {
   ROLE_PERMISSION_MATRIX_I18N_PREFIX,
   type RolePermissionMatrixTranslationKey,
 } from "../types.js";
 import { FeatureSelectAllCheckbox } from "./feature-select-all-checkbox.js";
 import { PermissionCheckbox } from "./permission-checkbox.js";
-
-const { RBAC_PREFIX } = CONSTANTS.GENERAL;
 
 type FeatureMatrixRowsProps = {
   checkboxId: string;
@@ -70,7 +68,7 @@ export const FeatureMatrixRows = memo(function FeatureMatrixRows({
   return (
     <Fragment key={featureID}>
       <tr>
-        <td className={styles[`${RBAC_PREFIX}-table-td-feature`]}>
+        <td className={styles[`${PERMISSION_MATRIX_BLOCK}__td--feature`]}>
           <FeatureSelectAllCheckbox
             checkboxId={checkboxId}
             checkedStates={featurePermissionCheckedStates}
@@ -91,7 +89,7 @@ export const FeatureMatrixRows = memo(function FeatureMatrixRows({
             return (
               <td
                 key={`${featureID}-${action.id}`}
-                className={styles[`${RBAC_PREFIX}-table-td-action`]}
+                className={styles[`${PERMISSION_MATRIX_BLOCK}__td--action`]}
               >
                 -
               </td>
@@ -103,7 +101,7 @@ export const FeatureMatrixRows = memo(function FeatureMatrixRows({
           return (
             <td
               key={`${featureID}-${action.id}`}
-              className={styles[`${RBAC_PREFIX}-table-td-action`]}
+              className={styles[`${PERMISSION_MATRIX_BLOCK}__td--action`]}
             >
               <PermissionCheckbox
                 action={action}
@@ -122,34 +120,41 @@ export const FeatureMatrixRows = memo(function FeatureMatrixRows({
 
       {hasSubActions && (
         <tr>
-          <td aria-hidden="true" className={styles[`${RBAC_PREFIX}-table-td-feature`]} />
-          <td className={styles[`${RBAC_PREFIX}-table-td-action`]} colSpan={mainActions.length}>
-            {subActions.map((action) => {
-              const matchedPermission = permissionByFeatureAndAction.get(
-                permissionLookupKey(featureID, String(action.id)),
-              );
+          <td aria-hidden="true" className={styles[`${PERMISSION_MATRIX_BLOCK}__td--feature-sub`]}>
+            -
+          </td>
+          <td
+            className={styles[`${PERMISSION_MATRIX_BLOCK}__td--action-sub`]}
+            colSpan={mainActions.length}
+          >
+            <div className={styles[`${PERMISSION_MATRIX_BLOCK}__td--action-sub-container`]}>
+              {subActions.map((action) => {
+                const matchedPermission = permissionByFeatureAndAction.get(
+                  permissionLookupKey(featureID, String(action.id)),
+                );
 
-              if (!matchedPermission) {
-                return null;
-              }
+                if (!matchedPermission) {
+                  return null;
+                }
 
-              const permissionID = String(matchedPermission.id);
+                const permissionID = String(matchedPermission.id);
 
-              return (
-                <PermissionCheckbox
-                  key={`${featureID}-${action.id}-sub`}
-                  action={action}
-                  checkboxId={checkboxId}
-                  checked={resolveChecked(permissionID, draftValue, enabledByPermissionID)}
-                  featureID={featureID}
-                  isReadOnly={isReadOnly}
-                  isSub
-                  matrixT={matrixT}
-                  onDraftPermissionChange={onDraftPermissionChange}
-                  permissionID={permissionID}
-                />
-              );
-            })}
+                return (
+                  <PermissionCheckbox
+                    key={`${featureID}-${action.id}-sub`}
+                    action={action}
+                    checkboxId={checkboxId}
+                    checked={resolveChecked(permissionID, draftValue, enabledByPermissionID)}
+                    featureID={featureID}
+                    isReadOnly={isReadOnly}
+                    isSub
+                    matrixT={matrixT}
+                    onDraftPermissionChange={onDraftPermissionChange}
+                    permissionID={permissionID}
+                  />
+                );
+              })}
+            </div>
           </td>
         </tr>
       )}

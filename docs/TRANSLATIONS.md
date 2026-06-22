@@ -1,6 +1,6 @@
 # Translations guide
 
-Customize Admin labels, placeholders, select options, and permission-matrix UI text via the plugin `translations` option.
+Customize Admin labels, placeholders, select options, reorder drawers, and permission-matrix UI text via the plugin `translations` option.
 
 ```ts
 import type { RBACTranslations } from "@zealamic/payload-plugin-rbac";
@@ -30,12 +30,14 @@ export default buildConfig({
 
 ## How it works
 
-Translations are used in **two places**:
+Translations are used in **three layers**:
 
-| Layer                          | What it affects                                                                      |
-| ------------------------------ | ------------------------------------------------------------------------------------ |
-| **Collection config**          | Sidebar group, collection labels, field labels, placeholders, select option labels   |
-| **`config.i18n.translations`** | Permission matrix UI (`useTranslation` keys under `components.rolePermissionMatrix`) |
+| Layer                          | What it affects                                                                                    |
+| ------------------------------ | -------------------------------------------------------------------------------------------------- |
+| **Collection config**          | Sidebar group, collection labels, field labels, placeholders, select option labels                 |
+| **`config.i18n.translations`** | Client UI: permission matrix, permission-action reorder drawer, permission-feature reorder drawer |
+
+The permission-action reorder drawer also reads **main/sub type labels** from collection translations (`collections.permissionActions.fields.type.mainLabel` / `subLabel`) for its type selector.
 
 **Merge order when the plugin loads:**
 
@@ -90,6 +92,8 @@ type RBACTranslations = {
       users?: UsersFieldTranslations; // fields only
     };
     components?: {
+      permissionActionReorder?: PermissionActionReorderTranslations;
+      permissionFeatureReorder?: PermissionFeatureReorderTranslations;
       rolePermissionMatrix?: MatrixTranslations;
     };
   };
@@ -97,6 +101,8 @@ type RBACTranslations = {
 ```
 
 `MatrixTranslations` matches `RolePermissionMatrixClientTranslations[string]` — see [Permission matrix UI](#permission-matrix-ui).
+
+Reorder component types: `PermissionActionReorderClientTranslations`, `PermissionFeatureReorderClientTranslations` — see [Reorder drawers](#reorder-drawers).
 
 ### Collection config keys (camelCase)
 
@@ -140,6 +146,7 @@ status: {
 }
 
 // permission-actions type: main | sub
+// Also used as labels in the permission-action reorder drawer type selector
 type: {
   mainLabel: "Main",
   subLabel: "Sub",
@@ -164,8 +171,8 @@ All keys are optional. Defaults live in `src/collections/*/default-data.ts`.
 | Field       | Keys                                                   |
 | ----------- | ------------------------------------------------------ |
 | `code`      | `label`, `placeholder`                                 |
-| `type`      | `label`, `placeholder`, `mainLabel`, `subLabel`        |
-| `sortOrder` | `label`, `placeholder`                                 |
+| `type`      | `label`, `placeholder`, `mainLabel`, `subLabel` — `mainLabel` / `subLabel` also label the reorder drawer type selector |
+| `sortOrder` | `label`, `placeholder` — field is **hidden** in Admin by default; order is managed via the reorder drawer          |
 | `status`    | `label`, `placeholder`, `activeLabel`, `inactiveLabel` |
 
 ### `permissionFeatures`
@@ -173,7 +180,7 @@ All keys are optional. Defaults live in `src/collections/*/default-data.ts`.
 | Field       | Keys                                                   |
 | ----------- | ------------------------------------------------------ |
 | `code`      | `label`, `placeholder`                                 |
-| `sortOrder` | `label`, `placeholder`                                 |
+| `sortOrder` | `label`, `placeholder` — field is **hidden** in Admin by default; order is managed via the reorder drawer          |
 | `status`    | `label`, `placeholder`, `activeLabel`, `inactiveLabel` |
 
 ### `permissions`
@@ -332,6 +339,123 @@ payloadPluginRBAC({
 
 ---
 
+## Reorder drawers
+
+List views for **`permission-actions`** and **`permission-features`** include a **Reorder** button (`beforeListTable`). Each opens a drawer where admins drag cards to set `sortOrder`. Lower positions appear first in the permission matrix.
+
+| Collection            | Client component                   | Config path                                      |
+| --------------------- | ---------------------------------- | ------------------------------------------------ |
+| `permission-actions`  | `PermissionActionReorderClient`    | `translations.<locale>.components.permissionActionReorder` |
+| `permission-features` | `PermissionFeatureReorderClient`   | `translations.<locale>.components.permissionFeatureReorder` |
+
+Registered Payload i18n prefixes:
+
+- `components:permissionActionReorder:…`
+- `components:permissionFeatureReorder:…`
+
+### Permission action reorder UI
+
+**Config path:** `translations.<locale>.components.permissionActionReorder`
+
+Actions are split by `type` (`main` | `sub`). The drawer shows a **type selector** (one list at a time). Selector option labels come from **collection** translations:
+
+| i18n key                                              | Config path                                              |
+| ----------------------------------------------------- | -------------------------------------------------------- |
+| `collections:permissionActions:fields:type:mainLabel` | `translations.<locale>.collections.permissionActions.fields.type.mainLabel` |
+| `collections:permissionActions:fields:type:subLabel`  | `translations.<locale>.collections.permissionActions.fields.type.subLabel`  |
+
+The selector appends the item count, e.g. `Main (4)`.
+
+#### Static keys (`permissionActionReorder`)
+
+| Config key                | i18n key suffix           | Description                                |
+| ------------------------- | ------------------------- | ------------------------------------------ |
+| `reorderButton.label`     | `reorderButton:label`     | List view button                           |
+| `drawer.title`            | `drawer:title`            | Drawer title                               |
+| `drawer.description`      | `drawer:description`      | Help text above the list                   |
+| `loading.placeholder`     | `loading:placeholder`     | Loading state                              |
+| `empty.placeholder`       | `empty:placeholder`       | No items / empty section                   |
+| `error.loadFailed`        | `error:loadFailed`        | Fetch error fallback message               |
+| `error.saveFailed`        | `error:saveFailed`        | Save error fallback message                |
+| `saveSuccess.message`     | `saveSuccess:message`     | Toast after successful save                |
+| `cancelButton.label`      | `cancelButton:label`      | Cancel button                              |
+| `saveButton.label`        | `saveButton:label`        | Save button                                |
+| `item.dragAriaLabel`      | `item:dragAriaLabel`      | Drag handle `aria-label` prefix            |
+| `item.sortOrderLabel`     | `item:sortOrderLabel`     | Per-card sort order label                  |
+
+```ts
+payloadPluginRBAC({
+  translations: {
+    en: {
+      collections: {
+        permissionActions: {
+          fields: {
+            type: {
+              mainLabel: "Main action",
+              subLabel: "Sub action",
+            },
+          },
+        },
+      },
+      components: {
+        permissionActionReorder: {
+          reorderButton: { label: "Reorder actions" },
+          drawer: {
+            title: "Reorder permission actions",
+            description:
+              "Drag cards to set display order in the permission matrix.",
+          },
+          saveButton: { label: "Save order" },
+        },
+      },
+    },
+  },
+});
+```
+
+`sortOrder` is reassigned **per type** (main items `0…n`, sub items `0…m` independently), matching how the permission matrix orders main and sub action columns.
+
+### Permission feature reorder UI
+
+**Config path:** `translations.<locale>.components.permissionFeatureReorder`
+
+Single draggable list (no main/sub split).
+
+#### Static keys (`permissionFeatureReorder`)
+
+| Config key                | i18n key suffix           | Description                                |
+| ------------------------- | ------------------------- | ------------------------------------------ |
+| `reorderButton.label`     | `reorderButton:label`     | List view button                           |
+| `drawer.title`            | `drawer:title`            | Drawer title                               |
+| `drawer.description`      | `drawer:description`      | Help text above the list                   |
+| `loading.placeholder`     | `loading:placeholder`     | Loading state                              |
+| `empty.placeholder`       | `empty:placeholder`       | No items                                   |
+| `error.loadFailed`        | `error:loadFailed`        | Fetch error fallback message               |
+| `error.saveFailed`        | `error:saveFailed`        | Save error fallback message                |
+| `saveSuccess.message`     | `saveSuccess:message`     | Toast after successful save                |
+| `cancelButton.label`      | `cancelButton:label`      | Cancel button                              |
+| `saveButton.label`        | `saveButton:label`        | Save button                                |
+| `item.dragAriaLabel`      | `item:dragAriaLabel`      | Drag handle `aria-label` prefix            |
+| `item.statusLabel`        | `item:statusLabel`        | Per-card status label                      |
+| `item.sortOrderLabel`     | `item:sortOrderLabel`     | Per-card sort order label                  |
+
+```ts
+payloadPluginRBAC({
+  translations: {
+    en: {
+      components: {
+        permissionFeatureReorder: {
+          reorderButton: { label: "Reorder features" },
+          drawer: { title: "Reorder permission features" },
+        },
+      },
+    },
+  },
+});
+```
+
+---
+
 ## Custom matrix field component (not translations)
 
 Matrix **text** comes from `translations` above. To swap checkbox/search **renderers**, use a client field component — render functions cannot be passed through server plugin config.
@@ -371,6 +495,10 @@ payloadPluginRBAC({
               label: "Action Code",
               placeholder: "e.g. create, read, update, delete",
             },
+            type: {
+              mainLabel: "Main action",
+              subLabel: "Sub action",
+            },
           },
         },
         roles: {
@@ -380,6 +508,9 @@ payloadPluginRBAC({
         },
       },
       components: {
+        permissionActionReorder: {
+          drawer: { title: "Reorder actions" },
+        },
         rolePermissionMatrix: {
           title: "Permission Matrix",
           search: {
@@ -418,11 +549,18 @@ export default buildConfig({
               admin: { group: "Hệ thống" },
               fields: {
                 code: { label: "Mã quyền thao tác" },
+                type: {
+                  mainLabel: "Hành động chính",
+                  subLabel: "Hành động phụ",
+                },
                 status: {
                   activeLabel: "Hoạt động",
                   inactiveLabel: "Ngừng hoạt động",
                 },
               },
+            },
+            permissionFeatures: {
+              labels: { singular: "Tính năng quyền", plural: "Tính năng quyền" },
             },
             roles: {
               labels: { singular: "Vai trò", plural: "Vai trò" },
@@ -444,6 +582,20 @@ export default buildConfig({
             },
           },
           components: {
+            permissionActionReorder: {
+              reorderButton: { label: "Sắp xếp" },
+              drawer: {
+                title: "Sắp xếp quyền thao tác",
+                description:
+                  "Kéo thả để thay đổi thứ tự hiển thị trong ma trận quyền.",
+              },
+              saveButton: { label: "Lưu thứ tự" },
+              cancelButton: { label: "Hủy" },
+            },
+            permissionFeatureReorder: {
+              reorderButton: { label: "Sắp xếp" },
+              drawer: { title: "Sắp xếp tính năng quyền" },
+            },
             rolePermissionMatrix: {
               title: "Ma trận quyền",
               loading: { placeholder: "Đang tải..." },
@@ -480,13 +632,19 @@ Working demo: `dev/rbac.ts`.
 
 ```ts
 import type {
+  PermissionActionReorderClientTranslations,
+  PermissionFeatureReorderClientTranslations,
   RBACTranslations,
   RolePermissionMatrixClientTranslations,
   RolesCollectionTranslations,
 } from "@zealamic/payload-plugin-rbac";
 ```
 
-Per-locale matrix strings: `RolePermissionMatrixClientTranslations["en"]`.
+Per-locale strings:
+
+- Matrix: `RolePermissionMatrixClientTranslations["en"]`
+- Action reorder: `PermissionActionReorderClientTranslations["en"]`
+- Feature reorder: `PermissionFeatureReorderClientTranslations["en"]`
 
 ---
 
@@ -502,6 +660,8 @@ Shipped defaults (override via `translations.en`):
 | `src/collections/roles/default-data.ts`                        | Roles + dataScope     |
 | `src/collections/roles-permissions/default-data.ts`            | Role permissions join |
 | `src/collections/users/default-data.ts`                        | User fields           |
+| `src/components/permission-action-reorder-client/default-data.ts` | Permission action reorder drawer |
+| `src/components/permission-feature-reorder-client/default-data.ts` | Permission feature reorder drawer |
 | `src/components/role-permission-matrix-client/default-data.ts` | Matrix UI             |
 
 Default matrix UI includes `search`, `error`, and `features.users` / CRUD `actions` keys.
@@ -510,18 +670,21 @@ Default matrix UI includes `search`, `error`, and `features.users` / CRUD `actio
 
 ## Quick reference
 
-| Goal                     | Path                                                                        |
-| ------------------------ | --------------------------------------------------------------------------- |
-| Sidebar group            | `translations.<locale>.collections.<key>.admin.group`                       |
-| Collection name          | `…labels.singular` / `…labels.plural`                                       |
-| Field label (roles matrix) | `…collections.roles.fields.permissionMatrix.label`                        |
-| Field override in schema | Use **`permissionMatrixDraft`** + `type: "json"`                            |
-| Select option            | `…fields.<fieldName>.<value>Label`                                          |
-| Matrix title             | `…components.rolePermissionMatrix.title`                                    |
-| Matrix search            | `…components.rolePermissionMatrix.search.placeholder`                       |
-| Feature row label        | `…components.rolePermissionMatrix.features.<code>`                          |
-| Action checkbox label    | `…components.rolePermissionMatrix.actions.<code>` (main and sub)            |
-| Custom field component   | `components.rolePermissionMatrixField` or `collections.roles.fields` override |
+| Goal                          | Path                                                                        |
+| ----------------------------- | --------------------------------------------------------------------------- |
+| Sidebar group                 | `translations.<locale>.collections.<key>.admin.group`                       |
+| Collection name               | `…labels.singular` / `…labels.plural`                                       |
+| Field label (roles matrix)    | `…collections.roles.fields.permissionMatrix.label`                          |
+| Field override in schema      | Use **`permissionMatrixDraft`** + `type: "json"`                            |
+| Select option                 | `…fields.<fieldName>.<value>Label`                                          |
+| Action reorder type selector  | `…collections.permissionActions.fields.type.mainLabel` / `subLabel`         |
+| Action reorder drawer text    | `…components.permissionActionReorder.*`                                     |
+| Feature reorder drawer text   | `…components.permissionFeatureReorder.*`                                    |
+| Matrix title                  | `…components.rolePermissionMatrix.title`                                  |
+| Matrix search                 | `…components.rolePermissionMatrix.search.placeholder`                       |
+| Feature row label             | `…components.rolePermissionMatrix.features.<code>`                          |
+| Action checkbox label         | `…components.rolePermissionMatrix.actions.<code>` (main and sub)            |
+| Custom matrix field component | `components.rolePermissionMatrixField` or `collections.roles.fields` override |
 
 ---
 

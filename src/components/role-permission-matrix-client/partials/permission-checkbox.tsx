@@ -2,15 +2,13 @@
 import { CheckboxInput } from "@payloadcms/ui";
 import { memo } from "react";
 import type { PermissionAction } from "../../../collections/permission-actions/types.js";
-import { CONSTANTS } from "../../../lib/constants/index.js";
 import { useMatrixComponents } from "../context/matrix-components-context.js";
 import styles from "../matrix.module.scss";
+import { PERMISSION_MATRIX_BLOCK } from "../matrix-block.js";
 import {
   ROLE_PERMISSION_MATRIX_I18N_PREFIX,
   type RolePermissionMatrixTranslationKey,
 } from "../types.js";
-
-const { RBAC_PREFIX } = CONSTANTS.GENERAL;
 
 type PermissionCheckboxProps = {
   action: PermissionAction;
@@ -40,8 +38,8 @@ export const PermissionCheckbox = memo(function PermissionCheckbox({
   const label =
     matrixT(`${ROLE_PERMISSION_MATRIX_I18N_PREFIX}:actions:${action.code}`) || String(action.id);
   const containerClassName = isSub
-    ? styles[`${RBAC_PREFIX}-table-td-action-sub-action-container`]
-    : styles[`${RBAC_PREFIX}-table-td-action-container`];
+    ? styles[`${PERMISSION_MATRIX_BLOCK}__sub-action-checkbox`]
+    : styles[`${PERMISSION_MATRIX_BLOCK}__action-checkbox`];
 
   if (renderCheckbox) {
     return (

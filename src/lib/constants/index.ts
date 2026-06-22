@@ -1,4 +1,5 @@
 import * as general from "./general.js";
+import * as message from "./message.js";
 import * as permission from "./permission.js";
 import * as permissionAction from "./permission-action.js";
 import * as permissionFeature from "./permission-feature.js";
@@ -12,4 +13,5 @@ export const CONSTANTS = {
   PERMISSION_ACTION: permissionAction,
   ROLE: role,
   USER: user,
+  MESSAGE: message,
 } as const;
