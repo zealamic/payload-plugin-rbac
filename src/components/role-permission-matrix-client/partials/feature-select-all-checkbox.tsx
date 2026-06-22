@@ -2,11 +2,9 @@
 
 import { CheckboxInput } from "@payloadcms/ui";
 import { memo, useCallback } from "react";
-import { CONSTANTS } from "../../../lib/constants/index.js";
 import { useMatrixComponents } from "../context/matrix-components-context.js";
 import styles from "../matrix.module.scss";
-
-const { RBAC_PREFIX } = CONSTANTS.GENERAL;
+import { PERMISSION_MATRIX_BLOCK } from "../matrix-block.js";
 
 type FeatureSelectAllCheckboxProps = {
   checkboxId: string;
@@ -50,7 +48,7 @@ export const FeatureSelectAllCheckbox = memo(function FeatureSelectAllCheckbox({
 
   if (renderCheckbox) {
     return (
-      <div className={styles[`${RBAC_PREFIX}-table-td-feature-container`]}>
+      <div className={styles[`${PERMISSION_MATRIX_BLOCK}__feature-checkbox`]}>
         {renderCheckbox({
           checked: allChecked,
           id: inputID,
@@ -65,7 +63,7 @@ export const FeatureSelectAllCheckbox = memo(function FeatureSelectAllCheckbox({
   }
 
   return (
-    <div className={styles[`${RBAC_PREFIX}-table-td-feature-container`]}>
+    <div className={styles[`${PERMISSION_MATRIX_BLOCK}__feature-checkbox`]}>
       <CheckboxInput
         checked={allChecked}
         id={inputID}

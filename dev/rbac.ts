@@ -8,7 +8,7 @@ export const rbacPlugin = payloadPluginRBAC({
   collections: {
     // Demo: pass override params for each collection
     permissionActions: {
-      // Demo 1: hide sortOrder field in admin form
+      // Demo: show sortOrder field in admin form (hidden by default; managed via reorder drawer)
       // fields: [
       //   {
       //     name: "sortOrder",
@@ -110,8 +110,25 @@ export const rbacPlugin = payloadPluginRBAC({
       },
       components: {
         rolePermissionMatrix: {
+          actions: {
+            create: "Create",
+            read: "Read",
+            update: "Update",
+            delete: "Delete",
+            test_1: "Test 1",
+            test_2: "Test 2",
+            test_3: "Test 3",
+            test_4: "Test 4",
+            test_5: "Test 5",
+            test_6: "Test 6",
+            test_7: "Test 7",
+            test_8: "Test 8",
+            test_9: "Test 9",
+            test_10: "Test 10",
+          },
           features: {
             posts: "Posts",
+            media: "Media",
           },
         },
       },

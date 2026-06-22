@@ -11,6 +11,8 @@ import { rolesPermissionsDefaultTranslations } from "./collections/roles-permiss
 import { getRolesPermissionsCollection } from "./collections/roles-permissions/index.js";
 import { usersDefaultTranslations } from "./collections/users/default-data.js";
 import { modifyUsersCollection } from "./collections/users/index.js";
+import { permissionActionReorderClientDefaultTranslations } from "./components/permission-action-reorder-client/default-data.js";
+import { permissionFeatureReorderClientDefaultTranslations } from "./components/permission-feature-reorder-client/default-data.js";
 import { rolePermissionMatrixClientDefaultTranslations } from "./components/role-permission-matrix-client/default-data.js";
 
 import {
@@ -155,6 +157,8 @@ export const payloadPluginRBAC =
           users: usersDefaultTranslations.en,
         },
         components: {
+          permissionActionReorder: permissionActionReorderClientDefaultTranslations.en,
+          permissionFeatureReorder: permissionFeatureReorderClientDefaultTranslations.en,
           rolePermissionMatrix: rolePermissionMatrixClientDefaultTranslations.en,
         },
       },

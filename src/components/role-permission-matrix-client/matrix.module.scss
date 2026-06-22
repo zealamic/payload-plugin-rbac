@@ -1,22 +1,15 @@
-// Import Payload compile-time SCSS vars ($breakpoint-s-width, etc.).
-// Note: @payloadcms/ui/scss/vars is not a published export — use dist/scss/vars.
-// @use "../../../node_modules/@payloadcms/ui/dist/scss/vars" as payload-vars;
 @use "../../styles/variables" as rbac-vars;
 
-$local-prefix: rbac-vars.$rbac-prefix;
+$block: #{rbac-vars.$rbac-prefix}-permission-matrix;
 
-.#{$local-prefix}-component {
-  &-label {
+.#{$block} {
+  &__placeholder {
     opacity: 0.8;
     padding: 0.5rem 0;
     min-height: 3rem;
   }
-  &-placeholder {
-    opacity: 0.8;
-    padding: 0.5rem 0;
-    min-height: 3rem;
-  }
-  &-title {
+
+  &__title {
     font-weight: 600;
     font-size: 1.25rem;
     padding-bottom: 0.5rem;
@@ -26,79 +19,89 @@ $local-prefix: rbac-vars.$rbac-prefix;
     gap: 0.5rem;
     min-height: 3rem;
   }
-  &-search {
+
+  &__search {
     flex: 1;
     margin-inline-start: auto;
     margin-bottom: 0;
     max-width: 16rem;
   }
-}
 
-.#{$local-prefix}-table {
-  border-collapse: collapse;
-  border-spacing: 0 !important;
-  width: 100%;
-  &-container {
+  &__table-container {
     border-radius: var(--style-radius-m);
     border: 1px solid var(--theme-border-color);
   }
-  &-th {
-    &-feature {
-      padding: 0.5rem;
+
+  &__table {
+    border-collapse: collapse;
+    border-spacing: 0 !important;
+    width: 100%;
+  }
+
+  &__th {
+    &--feature {
       text-align: left;
       border-right: 1px solid var(--theme-border-color);
       width: 25%;
+      padding: 1rem 0.75rem;
     }
-    &-action {
-      padding: 0.5rem;
+
+    &--action {
+      padding: 1rem 0.75rem;
     }
   }
-  &-td {
-    &-feature {
-      border-right: 1px solid var(--theme-border-color);
-      border-top: 1px solid var(--theme-border-color);
-      padding: 0.5rem;
+
+  &__td {
+    &--feature {
       display: flex;
       align-items: center;
       gap: 0.25rem;
-      &-container {
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-      }
-      &-label {
-        user-select: none;
-        cursor: pointer;
-      }
-    }
-    &-empty {
       border-top: 1px solid var(--theme-border-color);
+      border-right: 1px solid
+        color-mix(in srgb, var(--theme-border-color) 50%, transparent);
+      padding: 1rem 0.75rem;
+    }
+
+    &--feature-sub {
+      border-right: 1px solid
+        color-mix(in srgb, var(--theme-border-color) 50%, transparent);
+      padding: 1rem 0.75rem;
+      color: transparent;
+    }
+
+    &--action {
+      border-top: 1px solid var(--theme-border-color);
+      padding: 1rem 0.75rem;
+    }
+
+    &--action-sub {
+      border-top: 1px solid
+        color-mix(in srgb, var(--theme-border-color) 50%, transparent);
+      padding: 1rem 0.75rem;
+    }
+    &--action-sub-container {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    &--empty {
       opacity: 0.8;
       padding: 0.75rem 0.5rem;
       text-align: center;
     }
-    &-action {
-      border-top: 1px solid var(--theme-border-color);
-      padding: 0.5rem;
-      &-container {
-        display: flex;
-        align-items: center;
-      }
-      &-input {
-        user-select: none;
-        cursor: pointer;
-      }
-      &-label {
-        display: inline-block;
-        padding-left: 0.25rem;
-        user-select: none;
-        cursor: pointer;
-      }
-      &-sub-action-container {
-        display: inline-flex;
-        align-items: center;
-        margin-inline-end: 1rem;
-      }
-    }
+  }
+
+  &__feature-checkbox,
+  &__action-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  &__sub-action-checkbox {
+    display: inline-flex;
+    align-items: center;
+    margin-inline-end: 1rem;
   }
 }

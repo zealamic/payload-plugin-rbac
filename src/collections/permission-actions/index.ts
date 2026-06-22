@@ -1,8 +1,10 @@
-import type { CollectionConfig } from "payload";
+import type { CollectionConfig, PayloadRequest } from "payload";
+import { ERROR_KEYS, SUCCESS_KEYS } from "../../lib/constants/message.js";
 import { STATUS, TYPE } from "../../lib/constants/permission-action.js";
 import {
   getArrayOfMergedFieldAffectingData,
   getSuperAdminAccess,
+  mergeBeforeListTable,
   toLocaleRecord,
   toSelectPlaceholder,
 } from "../../lib/utils/index.js";
@@ -13,6 +15,7 @@ export const getPermissionActionsCollection = (params: PermissionActionsCollecti
   const arrTranslationsKeys = Object.keys(translations);
   const permissionActions: CollectionConfig = {
     slug: "permission-actions",
+    defaultSort: "updatedAt",
     labels: {
       singular: toLocaleRecord(
         arrTranslationsKeys,
@@ -26,6 +29,13 @@ export const getPermissionActionsCollection = (params: PermissionActionsCollecti
       useAsTitle: "code",
       defaultColumns: ["code", "type", "status", "updatedAt"],
       ...admin,
+      components: {
+        ...admin.components,
+        beforeListTable: mergeBeforeListTable(
+          "@zealamic/payload-plugin-rbac/client#PermissionActionReorderClient",
+          admin.components?.beforeListTable,
+        ),
+      },
     },
     access: {
       create: getSuperAdminAccess,
@@ -91,6 +101,7 @@ export const getPermissionActionsCollection = (params: PermissionActionsCollecti
             (locale) => translations[locale]?.fields?.sortOrder?.label,
           ),
           admin: {
+            hidden: true,
             placeholder: toLocaleRecord(
               arrTranslationsKeys,
               (locale) => translations[locale]?.fields?.sortOrder?.placeholder,
@@ -122,6 +133,68 @@ export const getPermissionActionsCollection = (params: PermissionActionsCollecti
         },
       ],
     }),
+    endpoints: [
+      {
+        path: "/reorder",
+        method: "post",
+        handler: async (req: PayloadRequest) => {
+          try {
+            if (!req.user) {
+              return Response.json({ error: ERROR_KEYS.UNAUTHORIZED }, { status: 401 });
+            }
+
+            const body = req.json ? await req.json() : (req as any).body;
+            const sortedItems = body?.sortedItems;
+
+            if (!Array.isArray(sortedItems)) {
+              return Response.json(
+                { error: ERROR_KEYS.DATA_MUST_BE_AN_SORTED_ARRAY },
+                { status: 400 },
+              );
+            }
+
+            if (
+              sortedItems.some(
+                (item: any) =>
+                  item?.id === undefined ||
+                  item?.id === null ||
+                  item?.sortOrder === undefined ||
+                  item?.sortOrder === null,
+              )
+            ) {
+              return Response.json(
+                { error: ERROR_KEYS.ARRAY_ITEM_MUST_HAVE_ID_AND_SORT_ORDER },
+                { status: 400 },
+              );
+            }
+
+            const payload = req.payload;
+
+            await Promise.all(
+              sortedItems.map((item) =>
+                payload.update({
+                  collection: "permission-actions",
+                  id: item.id,
+                  data: {
+                    sortOrder: item.sortOrder,
+                  },
+                }),
+              ),
+            );
+
+            return Response.json(
+              { success: true, message: SUCCESS_KEYS.UPDATE_SUCCESS },
+              { status: 200 },
+            );
+          } catch (error) {
+            return Response.json(
+              { error: error instanceof Error ? error.message : ERROR_KEYS.INTERNAL_SERVER_ERROR },
+              { status: 500 },
+            );
+          }
+        },
+      },
+    ],
     timestamps: true,
   };
 

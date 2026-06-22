@@ -99,6 +99,7 @@ export const getPermissionsCollection = (params: PermissionsCollectionParams) =>
             (locale) => translations[locale]?.fields?.sortOrder?.label,
           ),
           admin: {
+            hidden: true,
             placeholder: toLocaleRecord(
               arrTranslationsKeys,
               (locale) => translations[locale]?.fields?.sortOrder?.placeholder,

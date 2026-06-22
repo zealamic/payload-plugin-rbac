@@ -7,6 +7,8 @@ import type * as RolePermissionTypes from "./collections/roles-permissions/types
 import type * as UsersTypes from "./collections/users/types.js";
 
 // Components types
+import type * as PermissionActionReorderClientTypes from "./components/permission-action-reorder-client/types.js";
+import type * as PermissionFeatureReorderClientTypes from "./components/permission-feature-reorder-client/types.js";
 import type * as RolePermissionMatrixClientTypes from "./components/role-permission-matrix-client/types.js";
 
 export * from "./collections/permission-actions/types.js";
@@ -15,6 +17,8 @@ export * from "./collections/permissions/types.js";
 export * from "./collections/roles/types.js";
 export * from "./collections/roles-permissions/types.js";
 export * from "./collections/users/types.js";
+export * from "./components/permission-action-reorder-client/types.js";
+export * from "./components/permission-feature-reorder-client/types.js";
 export * from "./components/role-permission-matrix-client/types.js";
 
 export type ItemRef = number | string | { id?: number | string };
@@ -36,6 +40,8 @@ export type RBACTranslations = {
     };
     // Components types
     components?: {
+      permissionActionReorder?: PermissionActionReorderClientTypes.PermissionActionReorderClientTranslations[string];
+      permissionFeatureReorder?: PermissionFeatureReorderClientTypes.PermissionFeatureReorderClientTranslations[string];
       rolePermissionMatrix?: RolePermissionMatrixClientTypes.RolePermissionMatrixClientTranslations[string];
     };
   };
