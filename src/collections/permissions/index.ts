@@ -2,14 +2,25 @@ import type { CollectionConfig } from "payload";
 import { STATUS } from "../../lib/constants/permission.js";
 import {
   getArrayOfMergedFieldAffectingData,
+  getCreatedByRelationshipField,
   getSuperAdminAccess,
+  resolveUsersCollectionSlug,
   toLocaleRecord,
   toSelectPlaceholder,
 } from "../../lib/utils/index.js";
+import { createdByOnCreateBeforeChangeHook } from "../../lib/utils/hooks.js";
 import type { PermissionsCollectionParams } from "./types.js";
 
 export const getPermissionsCollection = (params: PermissionsCollectionParams) => {
-  const { translations = {}, access = {}, fields = [], labels = {}, admin = {} } = params || {};
+  const {
+    translations = {},
+    access = {},
+    fields = [],
+    labels = {},
+    admin = {},
+    usersCollectionSlug: usersCollectionSlugInput,
+  } = params || {};
+  const usersCollectionSlug = resolveUsersCollectionSlug(usersCollectionSlugInput);
   const arrTranslationsKeys = Object.keys(translations);
   const permissions: CollectionConfig = {
     slug: "permissions",
@@ -129,8 +140,12 @@ export const getPermissionsCollection = (params: PermissionsCollectionParams) =>
             ),
           },
         },
+        getCreatedByRelationshipField(usersCollectionSlug),
       ],
     }),
+    hooks: {
+      beforeChange: [createdByOnCreateBeforeChangeHook],
+    },
     timestamps: true,
   };
 

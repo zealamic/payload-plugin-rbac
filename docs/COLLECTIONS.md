@@ -124,12 +124,12 @@ all  >  hierarchy  >  own
 
 **What you need in your app collections:**
 
-1. A field storing the creator (default: Payload `createdBy` → relationship to `users`)
+1. Add a relationship field to `users` storing the document creator (commonly named `createdBy`)
 2. Set it on create (hook or default value)
-3. Pass `options` to `getPermissionAccess` only when the ownership field or users collection slug differs from the defaults (`createdBy` / `users`)
+3. Pass `options` to `getPermissionAccess`: use `options: {}` when the field is `createdBy`, or `options: { createdByField: "yourFieldName" }` for any other name
 
 ```ts
-// posts collection — read filtered by dataScope (options defaults to createdBy + users)
+// posts collection — add createdBy field yourself; options: {} uses createdByField default
 read: getPermissionAccess({
   featureCode: "posts",
   actionCode: "read",

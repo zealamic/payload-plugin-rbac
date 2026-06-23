@@ -18,6 +18,7 @@ import { rolePermissionMatrixClientDefaultTranslations } from "./components/role
 import {
   getAllTranslationsOfSpecificObject,
   getMergedTranslations,
+  resolveUsersCollectionSlug,
   type TranslationValue,
 } from "./lib/utils/index.js";
 import type {
@@ -45,9 +46,12 @@ export const payloadPluginRBAC =
       pluginOptions.translations = {};
     }
 
+    const usersCollectionSlug = resolveUsersCollectionSlug(config.admin?.user);
+
     config.collections.push(
       getPermissionActionsCollection({
         ...pluginOptions.collections?.permissionActions,
+        usersCollectionSlug,
         translations: getMergedTranslations({
           defaultTranslations: permissionActionsDefaultTranslations,
           translations: getAllTranslationsOfSpecificObject<PermissionActionsCollectionTranslations>(
@@ -62,6 +66,7 @@ export const payloadPluginRBAC =
     config.collections.push(
       getPermissionFeaturesCollection({
         ...pluginOptions.collections?.permissionFeatures,
+        usersCollectionSlug,
         translations: getMergedTranslations({
           defaultTranslations: permissionFeaturesDefaultTranslations,
           translations:
@@ -75,6 +80,7 @@ export const payloadPluginRBAC =
     config.collections.push(
       getPermissionsCollection({
         ...pluginOptions.collections?.permissions,
+        usersCollectionSlug,
         translations: getMergedTranslations({
           defaultTranslations: permissionsDefaultTranslations,
           translations: getAllTranslationsOfSpecificObject<PermissionsCollectionTranslations>({
@@ -87,6 +93,7 @@ export const payloadPluginRBAC =
     config.collections.push(
       getRolesCollection({
         ...pluginOptions.collections?.roles,
+        usersCollectionSlug,
         components: {
           rolePermissionMatrixField: pluginOptions.components?.rolePermissionMatrixField,
         },

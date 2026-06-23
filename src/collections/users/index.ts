@@ -1,7 +1,9 @@
 import type { Config, Field } from "payload";
 import {
   getArrayOfMergedFieldAffectingData,
+  getCreatedByRelationshipField,
   getPermissionAccess,
+  resolveUsersCollectionSlug,
   toLocaleRecord,
 } from "../../lib/utils/index.js";
 import { mergeUserCollectionHooks } from "./parent-path.js";
@@ -46,6 +48,7 @@ const buildDefaultFields = (
         readOnly: true,
       },
     },
+    getCreatedByRelationshipField(userSlug),
   ];
 };
 
@@ -54,7 +57,7 @@ export const modifyUsersCollection = (params: UsersModificationParams = {}) => {
 
   return (incomingConfig: Config): Config => {
     const config = { ...incomingConfig };
-    const userSlug = config.admin?.user || "users";
+    const userSlug = resolveUsersCollectionSlug(config.admin?.user);
 
     const customAdmin = {
       defaultColumns: ["email", "roles", "isSuperAdmin", "updatedAt"],

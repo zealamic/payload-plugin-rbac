@@ -43,7 +43,7 @@ type DataScopeOptions = {
 | `createdByField`      | Document ownership field for `own` / `hierarchy` / `all` row filters |
 | `usersCollectionSlug` | Users collection slug for hierarchy descendant lookups               |
 
-The plugin uses `createdByField: "id"` on the auth users collection (each user “owns” their own document). App collections typically use `"createdBy"`.
+The plugin uses `createdByField: "id"` on the auth users collection (each user “owns” their own document). App collections typically add a `createdBy` relationship field and rely on the default `createdByField: "createdBy"`.
 
 ---
 
@@ -59,19 +59,31 @@ Unified entrypoint for Payload `collection.access` handlers. Pass `featureCode` 
 | --------- | --------- | ----------------- |
 | `create`, `readVersions`, `unlock`, … | `featureCode` + `actionCode` only | `boolean` — user has the permission or not |
 | `read` (with row-level filter) | above + `options` | `boolean` or a Payload `Where` — permission check, then data-scope filter |
-| `update`, `delete` | above + `mode: "modify"` + `options` | `boolean` — loads the target document, then checks permission + scope for that row |
+| `update`, `delete` | above + `mode: "modify"` (+ `options` when ownership field ≠ `createdBy`) | `boolean` — loads the target document, then checks permission + scope for that row |
+
+#### Ownership field (required for data scope)
+
+Payload **does not** create a creator/owner field on your collections. For `dataScope` (`own` / `hierarchy` / `all`) to work, add a **relationship to `users`** yourself and set it when a document is created (usually a `beforeChange` hook).
+
+| Your field name | What to pass to `getPermissionAccess` |
+| --------------- | ------------------------------------- |
+| `createdBy` (recommended) | `options: {}` on `read`, or omit `options` on `update` / `delete` — `createdByField` defaults to `"createdBy"` |
+| Any other name (e.g. `author`, `owner`) | `options: { createdByField: "yourFieldName" }` on `read`, `update`, and `delete` |
+
+`usersCollectionSlug` defaults to `"users"`. Pass `options: { usersCollectionSlug: "…" }` only when your auth collection slug differs.
 
 **Rules:**
 
 - Do **not** pass `collectionSlug` unless `mode` is `"modify"`.
 - On `update` / `delete`, omit `collectionSlug` when it matches `featureCode` (same as the collection `slug`) — it defaults to `featureCode`. Pass `collectionSlug` only when the collection slug differs from the permission feature code.
-- Pass `options` on `read` when roles use `dataScope` (`own` / `hierarchy` / `all`) and documents have an ownership field. Omit field keys when using Payload defaults (`createdBy`, `users`).
-- Pass `options` on `update` / `delete` only when the ownership field or users slug differs from defaults — otherwise omit `options` entirely.
-- Omit `options` on `create` — creation is permission-only; set `createdBy` in a `beforeChange` hook so later reads/updates can resolve scope.
+- Add an ownership field + create hook **before** wiring `options` on `read` / `update` / `delete` — without it, scope checks cannot attribute documents to a user.
+- Pass `options` on `read` when roles use `dataScope`. Use `options: {}` when the field is named `createdBy`; set `createdByField` when it is not.
+- On `update` / `delete`, omit `options` when the field is `createdBy`; pass `createdByField` for any other ownership field name.
+- Omit `options` on `create` — creation is permission-only; set the ownership field in `beforeChange` so later reads/updates can resolve scope.
 
-`options` defaults to `createdByField: "createdBy"` and `usersCollectionSlug: "users"` (Payload's usual setup). On the **users** collection the plugin uses `createdByField: "id"` instead (each user owns their own row).
+On the **users** collection the plugin uses `createdByField: "id"` (each user owns their own row) — see `src/collections/users/index.ts`.
 
-#### Full collection example
+#### Full collection example (`createdBy`)
 
 ```ts
 const FEATURE_CODE = "posts";
@@ -85,14 +97,14 @@ export const Posts: CollectionConfig = {
     actionCode: "create",
   }),
 
-  // Read list: permission + data-scope Where (own / hierarchy / all)
+  // Read: pass options: {} — createdByField defaults to "createdBy"
   read: getPermissionAccess({
     featureCode: FEATURE_CODE,
     actionCode: "read",
     options: {},
   }),
 
-  // Update/delete: options default to createdBy + users
+  // Update/delete: omit options when ownership field is "createdBy"
   update: getPermissionAccess({
     featureCode: FEATURE_CODE,
     actionCode: "update",
@@ -104,6 +116,7 @@ export const Posts: CollectionConfig = {
     mode: "modify",
   }),
   },
+  // You must add this field — Payload does not create it for you
   fields: [
     {
       name: "createdBy",
@@ -126,6 +139,59 @@ export const Posts: CollectionConfig = {
 ```
 
 Full working collection: `dev/collections/posts.ts`. Users collection wiring (with `createdByField: "id"`): `src/collections/users/index.ts`.
+
+#### Custom ownership field name (`author`)
+
+When the creator is stored under a different relationship field, pass `createdByField` in `options`:
+
+```ts
+const FEATURE_CODE = "articles";
+
+export const Articles: CollectionConfig = {
+  slug: FEATURE_CODE,
+  access: {
+    create: getPermissionAccess({
+      featureCode: FEATURE_CODE,
+      actionCode: "create",
+    }),
+    read: getPermissionAccess({
+      featureCode: FEATURE_CODE,
+      actionCode: "read",
+      options: { createdByField: "author" },
+    }),
+    update: getPermissionAccess({
+      featureCode: FEATURE_CODE,
+      actionCode: "update",
+      mode: "modify",
+      options: { createdByField: "author" },
+    }),
+    delete: getPermissionAccess({
+      featureCode: FEATURE_CODE,
+      actionCode: "delete",
+      mode: "modify",
+      options: { createdByField: "author" },
+    }),
+  },
+  fields: [
+    {
+      name: "author",
+      type: "relationship",
+      relationTo: "users",
+      admin: { readOnly: true },
+    },
+  ],
+  hooks: {
+    beforeChange: [
+      ({ req, data, operation }) => {
+        if (operation === "create" && req.user?.id && !data?.author) {
+          return { ...data, author: req.user.id };
+        }
+        return data;
+      },
+    ],
+  },
+};
+```
 
 #### How each mode behaves at runtime
 
@@ -151,7 +217,9 @@ Safe for access handlers; cache is discarded when the request ends.
 - Using `mode: "modify"` on `read` or `create` — modify mode is only for `update` / `delete`
 - Passing `collectionSlug` without `mode: "modify"` — invalid config; IDE/type-check should flag this
 - Expecting filtered list results on `read` without `options` — you get permission-only, no row filter
-- Missing `createdBy` (or your `createdByField`) on documents — scope checks cannot attribute ownership
+- Using `dataScope` without adding an ownership relationship field on the collection
+- Not setting the ownership field on create — scope checks cannot attribute documents to a user
+- Using a custom field name but omitting `createdByField` in `options` — helper looks at `createdBy` by default
 - `featureCode` / `actionCode` not matching seeded `permission-features` / `permission-actions` codes
 
 ---

@@ -54,11 +54,20 @@ export type PayloadPluginRBACConfig = {
   collections?: Partial<
     Record<
       string,
-      | Omit<PermissionActionTypes.PermissionActionsCollectionParams, "translations">
-      | Omit<PermissionFeatureTypes.PermissionFeaturesCollectionParams, "translations">
-      | Omit<PermissionTypes.PermissionsCollectionParams, "translations">
-      | Omit<RoleTypes.RolesCollectionParams, "translations">
-      | Omit<RolePermissionTypes.RolesPermissionsCollectionParams, "translations">
+      | Omit<
+          PermissionActionTypes.PermissionActionsCollectionParams,
+          "translations" | "usersCollectionSlug"
+        >
+      | Omit<
+          PermissionFeatureTypes.PermissionFeaturesCollectionParams,
+          "translations" | "usersCollectionSlug"
+        >
+      | Omit<PermissionTypes.PermissionsCollectionParams, "translations" | "usersCollectionSlug">
+      | Omit<RoleTypes.RolesCollectionParams, "translations" | "usersCollectionSlug">
+      | Omit<
+          RolePermissionTypes.RolesPermissionsCollectionParams,
+          "translations" | "usersCollectionSlug"
+        >
     >
   >;
   disabled?: boolean;

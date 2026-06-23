@@ -3,15 +3,26 @@ import { ERROR_KEYS, SUCCESS_KEYS } from "../../lib/constants/message.js";
 import { STATUS, TYPE } from "../../lib/constants/permission-action.js";
 import {
   getArrayOfMergedFieldAffectingData,
+  getCreatedByRelationshipField,
   getSuperAdminAccess,
   mergeBeforeListTable,
+  resolveUsersCollectionSlug,
   toLocaleRecord,
   toSelectPlaceholder,
 } from "../../lib/utils/index.js";
+import { createdByOnCreateBeforeChangeHook } from "../../lib/utils/hooks.js";
 import type { PermissionActionsCollectionParams } from "./types.js";
 
 export const getPermissionActionsCollection = (params: PermissionActionsCollectionParams) => {
-  const { translations = {}, access = {}, fields = [], labels = {}, admin = {} } = params || {};
+  const {
+    translations = {},
+    access = {},
+    fields = [],
+    labels = {},
+    admin = {},
+    usersCollectionSlug: usersCollectionSlugInput,
+  } = params || {};
+  const usersCollectionSlug = resolveUsersCollectionSlug(usersCollectionSlugInput);
   const arrTranslationsKeys = Object.keys(translations);
   const permissionActions: CollectionConfig = {
     slug: "permission-actions",
@@ -131,8 +142,12 @@ export const getPermissionActionsCollection = (params: PermissionActionsCollecti
             ),
           },
         },
+        getCreatedByRelationshipField(usersCollectionSlug),
       ],
     }),
+    hooks: {
+      beforeChange: [createdByOnCreateBeforeChangeHook],
+    },
     endpoints: [
       {
         path: "/reorder",
