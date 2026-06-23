@@ -82,14 +82,12 @@ export const modifyUsersCollection = (params: UsersModificationParams = {}) => {
         featureCode: userSlug,
         actionCode: "update",
         mode: "modify",
-        collectionSlug: userSlug,
         options: dataScopeOptions,
       }),
       delete: getPermissionAccess({
         featureCode: userSlug,
         actionCode: "delete",
         mode: "modify",
-        collectionSlug: userSlug,
         options: dataScopeOptions,
       }),
       read: getPermissionAccess({

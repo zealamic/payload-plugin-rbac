@@ -1,7 +1,7 @@
-import type { CollectionConfig } from "payload"
-import { getPermissionAccess } from "@zealamic/payload-plugin-rbac"
+import { getPermissionAccess } from "@zealamic/payload-plugin-rbac";
+import type { CollectionConfig } from "payload";
 
-const FEATURE_CODE = "posts"
+const FEATURE_CODE = "posts";
 
 export const postsCollection: CollectionConfig = {
   slug: "posts",
@@ -17,30 +17,17 @@ export const postsCollection: CollectionConfig = {
     read: getPermissionAccess({
       featureCode: FEATURE_CODE,
       actionCode: "read",
-      options: {
-        createdByField: "createdBy",
-        usersCollectionSlug: "users",
-      },
+      options: {},
     }),
     update: getPermissionAccess({
       featureCode: FEATURE_CODE,
       actionCode: "update",
       mode: "modify",
-      collectionSlug: FEATURE_CODE,
-      options: {
-        createdByField: "createdBy",
-        usersCollectionSlug: "users",
-      },
     }),
     delete: getPermissionAccess({
       featureCode: FEATURE_CODE,
       actionCode: "delete",
       mode: "modify",
-      collectionSlug: FEATURE_CODE,
-      options: {
-        createdByField: "createdBy",
-        usersCollectionSlug: "users",
-      },
     }),
   },
   fields: [
@@ -70,11 +57,11 @@ export const postsCollection: CollectionConfig = {
           return {
             ...data,
             createdBy: req.user.id,
-          }
+          };
         }
 
-        return data
+        return data;
       },
     ],
   },
-}
+};

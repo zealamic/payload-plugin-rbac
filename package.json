@@ -1,6 +1,6 @@
 {
   "name": "@zealamic/payload-plugin-rbac",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "A plugin for Payload CMS to manage authentication and authorization",
   "license": "MIT",
   "type": "module",

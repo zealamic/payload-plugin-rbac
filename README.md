@@ -103,7 +103,7 @@ export const Posts: CollectionConfig = {
     read: getPermissionAccess({
       featureCode: "posts",
       actionCode: "read",
-      options: { createdByField: "createdBy" },
+      options: {},
     }),
     create: getPermissionAccess({
       featureCode: "posts",
@@ -113,15 +113,11 @@ export const Posts: CollectionConfig = {
       featureCode: "posts",
       actionCode: "update",
       mode: "modify",
-      collectionSlug: "posts",
-      options: { createdByField: "createdBy" },
     }),
     delete: getPermissionAccess({
       featureCode: "posts",
       actionCode: "delete",
       mode: "modify",
-      collectionSlug: "posts",
-      options: { createdByField: "createdBy" },
     }),
   },
   hooks: {
