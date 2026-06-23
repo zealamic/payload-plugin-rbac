@@ -32,8 +32,52 @@ export type DataScopeOptions = {
   usersCollectionSlug?: string;
 };
 
+type PermissionAccessBaseArgs = {
+  featureCode: string;
+  actionCode: string;
+};
+
+/** Permission-only check (boolean). */
+export type GetPermissionAccessPermissionOnlyArgs = PermissionAccessBaseArgs & {
+  mode?: "none";
+  collectionSlug?: never;
+  options?: never;
+};
+
+/** Read access: permission check + data-scope `Where` filter. */
+export type GetPermissionAccessReadArgs = PermissionAccessBaseArgs & {
+  mode?: "none";
+  collectionSlug?: never;
+  options: DataScopeOptions;
+};
+
+/** Update/delete access: per-document RBAC + data-scope check. */
+export type GetPermissionAccessModifyArgs = PermissionAccessBaseArgs & {
+  mode: "modify";
+  /** Defaults to `featureCode` when omitted (typical when both match the collection `slug`). */
+  collectionSlug?: string;
+  /** Defaults to `{ createdByField: "createdBy", usersCollectionSlug: "users" }` when omitted. */
+  options?: DataScopeOptions;
+};
+
+export type GetPermissionAccessArgs =
+  | GetPermissionAccessPermissionOnlyArgs
+  | GetPermissionAccessReadArgs
+  | GetPermissionAccessModifyArgs;
+
 const DEFAULT_CREATED_BY_FIELD = "createdBy";
 const DEFAULT_USERS_COLLECTION = "users";
+
+const DEFAULT_DATA_SCOPE_OPTIONS: Required<DataScopeOptions> = {
+  createdByField: DEFAULT_CREATED_BY_FIELD,
+  usersCollectionSlug: DEFAULT_USERS_COLLECTION,
+};
+
+const resolveDataScopeOptions = (options?: DataScopeOptions): Required<DataScopeOptions> => ({
+  createdByField: options?.createdByField ?? DEFAULT_DATA_SCOPE_OPTIONS.createdByField,
+  usersCollectionSlug:
+    options?.usersCollectionSlug ?? DEFAULT_DATA_SCOPE_OPTIONS.usersCollectionSlug,
+});
 
 const SCOPE_PRIORITY: Record<DataScope, number> = {
   [DATA_SCOPE.OWN]: 0,
@@ -278,13 +322,7 @@ export const getAuthenticatedOrSuperAdminAccess: Access | Promise<boolean> = asy
  * Core RBAC access function (permission-only).
  * Super admins bypass; others are evaluated via roles + `roles-permissions`.
  */
-const getBasePermissionAccess = ({
-  featureCode,
-  actionCode,
-}: {
-  featureCode: string;
-  actionCode: string;
-}) => {
+const getBasePermissionAccess = ({ featureCode, actionCode }: PermissionAccessBaseArgs) => {
   return async ({ req }: { req: PayloadRequest }) => {
     const user = req.user as RequestUser | undefined;
     if (!user) {
@@ -512,7 +550,7 @@ export const canAccessDocumentByDataScope = async ({
   featureCode,
   actionCode,
   collectionSlug,
-  options = {},
+  options: optionsInput,
 }: {
   req: PayloadRequest;
   doc: Record<string, unknown>;
@@ -521,9 +559,9 @@ export const canAccessDocumentByDataScope = async ({
   collectionSlug: string;
   options?: DataScopeOptions;
 }): Promise<boolean> => {
+  const options = resolveDataScopeOptions(optionsInput);
   const user = req.user as RequestUser | undefined;
-  const createdByField = options.createdByField ?? DEFAULT_CREATED_BY_FIELD;
-  const usersCollectionSlug = options.usersCollectionSlug ?? DEFAULT_USERS_COLLECTION;
+  const { createdByField, usersCollectionSlug } = options;
 
   if (!user?.id) {
     return false;
@@ -597,12 +635,14 @@ export const mergeDataScopeWhere = (base: Where | undefined, scopeWhere: Where |
 const getPermissionAndDataScopeReadAccess = ({
   featureCode,
   actionCode,
-  options = {},
+  options: optionsInput,
 }: {
   featureCode: string;
   actionCode: string;
   options?: DataScopeOptions;
 }) => {
+  const options = resolveDataScopeOptions(optionsInput);
+
   return async ({ req }: { req: PayloadRequest }) => {
     const hasPermission = await getBasePermissionAccess({
       featureCode,
@@ -627,20 +667,17 @@ const getPermissionAndDataScopeModifyAccess = ({
   featureCode,
   actionCode,
   collectionSlug,
-  options = {},
-}: {
-  featureCode: string;
-  actionCode: string;
-  collectionSlug?: string;
-  options?: DataScopeOptions;
-}) => {
+  options: optionsInput,
+}: PermissionAccessBaseArgs & Omit<GetPermissionAccessModifyArgs, "mode">) => {
+  const options = resolveDataScopeOptions(optionsInput);
+
   return async ({ req, id }: { req: PayloadRequest; id?: string | number }) => {
-    if (!id || !collectionSlug) {
+    if (!id) {
       return false;
     }
 
     const doc = await req.payload.findByID({
-      collection: collectionSlug,
+      collection: collectionSlug ?? featureCode,
       id,
       depth: 0,
       req,
@@ -651,7 +688,7 @@ const getPermissionAndDataScopeModifyAccess = ({
       doc: doc as Record<string, unknown>,
       featureCode,
       actionCode,
-      collectionSlug,
+      collectionSlug: collectionSlug ?? featureCode,
       options,
     });
   };
@@ -660,40 +697,31 @@ const getPermissionAndDataScopeModifyAccess = ({
 /**
  * Unified access entrypoint.
  *
- * Modes:
- * - `none`: permission-only (boolean)
- * - `modify`: per-document mutation check (requires `collectionSlug` + runtime `id`)
- * - implicit read mode: pass `options` to get a read `Where` filter after permission check
+ * Modes (`GetPermissionAccessArgs`):
+ * - permission-only — default; boolean check, no `options` or `collectionSlug`
+ * - read + data scope — pass `options` (no `mode: "modify"`)
+ * - modify + data scope — `mode: "modify"`; `collectionSlug` optional (defaults to `featureCode`)
  */
 
-export const getPermissionAccess = ({
-  featureCode,
-  actionCode,
-  mode = "none",
-  collectionSlug,
-  options,
-}: {
-  featureCode: string;
-  actionCode: string;
-  mode?: "none" | "modify";
-  collectionSlug?: string;
-  options?: DataScopeOptions;
-}) => {
-  if (mode === "modify") {
+export const getPermissionAccess = (args: GetPermissionAccessArgs) => {
+  const { featureCode, actionCode } = args;
+
+  if (args.mode === "modify") {
     return getPermissionAndDataScopeModifyAccess({
       featureCode,
       actionCode,
-      collectionSlug,
-      options,
+      collectionSlug: args.collectionSlug ?? featureCode,
+      options: args.options,
     });
   }
 
-  if (options && Object.keys(options).length > 0) {
+  if ("options" in args) {
     return getPermissionAndDataScopeReadAccess({
       featureCode,
       actionCode,
-      options,
+      options: args.options,
     });
   }
+
   return getBasePermissionAccess({ featureCode, actionCode });
 };
