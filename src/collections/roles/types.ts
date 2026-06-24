@@ -1,5 +1,6 @@
 import type { CollectionConfig, Field } from "payload";
 import type { DATA_SCOPE, STATUS } from "../../lib/constants/role.js";
+import type { RBACUsersCollectionParams } from "../shared/types.js";
 
 export type DataScope = (typeof DATA_SCOPE)[keyof typeof DATA_SCOPE];
 export type RoleStatus = (typeof STATUS)[keyof typeof STATUS];
@@ -47,7 +48,7 @@ export type RolesCollectionTranslations = {
   };
 };
 
-export type RolesCollectionParams = {
+export type RolesCollectionParams = RBACUsersCollectionParams & {
   translations?: RolesCollectionTranslations;
   fields?: Field[];
   access?: CollectionConfig["access"];

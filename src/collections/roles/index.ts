@@ -1,8 +1,11 @@
 import type { CollectionConfig, Condition } from "payload";
 import { DATA_SCOPE, STATUS } from "../../lib/constants/role.js";
+import { createdByOnCreateBeforeChangeHook } from "../../lib/utils/hooks.js";
 import {
   getArrayOfMergedFieldAffectingData,
+  getCreatedByRelationshipField,
   getSuperAdminAccess,
+  resolveUsersCollectionSlug,
   toLocaleRecord,
   toSelectPlaceholder,
 } from "../../lib/utils/index.js";
@@ -10,7 +13,15 @@ import { syncPermissionMatrixDraftAfterChange } from "./hooks/sync-permission-ma
 import type { RolesCollectionParams } from "./types.js";
 
 export const getRolesCollection = (params: RolesCollectionParams) => {
-  const { translations = {}, access = {}, fields = [], labels = {}, admin = {} } = params || {};
+  const {
+    translations = {},
+    access = {},
+    fields = [],
+    labels = {},
+    admin = {},
+    usersCollectionSlug: usersCollectionSlugInput,
+  } = params || {};
+  const usersCollectionSlug = resolveUsersCollectionSlug(usersCollectionSlugInput);
   const arrTranslationsKeys = Object.keys(translations);
   const roles: CollectionConfig = {
     slug: "roles",
@@ -42,6 +53,7 @@ export const getRolesCollection = (params: RolesCollectionParams) => {
     },
     hooks: {
       afterChange: [syncPermissionMatrixDraftAfterChange],
+      beforeChange: [createdByOnCreateBeforeChangeHook],
     },
     fields: getArrayOfMergedFieldAffectingData({
       fields,
@@ -154,8 +166,10 @@ export const getRolesCollection = (params: RolesCollectionParams) => {
             condition: ((_, __, { operation }) => operation === "update") satisfies Condition,
           },
         },
+        getCreatedByRelationshipField(usersCollectionSlug),
       ],
     }),
+
     timestamps: true,
   };
 

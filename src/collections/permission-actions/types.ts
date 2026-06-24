@@ -1,4 +1,5 @@
 import type { CollectionConfig, Field } from "payload";
+import type { RBACUsersCollectionParams } from "../shared/types.js";
 import { STATUS, TYPE } from "../../lib/constants/permission-action.js";
 
 export type PermissionActionsCollectionTranslations = {
@@ -35,7 +36,7 @@ export type PermissionActionsCollectionTranslations = {
   };
 };
 
-export type PermissionActionsCollectionParams = {
+export type PermissionActionsCollectionParams = RBACUsersCollectionParams & {
   translations?: PermissionActionsCollectionTranslations;
   fields?: Field[];
   access?: CollectionConfig["access"];

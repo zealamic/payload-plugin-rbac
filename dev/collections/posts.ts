@@ -1,4 +1,7 @@
-import { getPermissionAccess } from "@zealamic/payload-plugin-rbac";
+import {
+  createdByOnCreateBeforeChangeHook,
+  getPermissionAccess,
+} from "@zealamic/payload-plugin-rbac";
 import type { CollectionConfig } from "payload";
 
 const FEATURE_CODE = "posts";
@@ -51,17 +54,6 @@ export const postsCollection: CollectionConfig = {
     },
   ],
   hooks: {
-    beforeChange: [
-      ({ req, data, operation }) => {
-        if (operation === "create" && req.user?.id && !data?.createdBy) {
-          return {
-            ...data,
-            createdBy: req.user.id,
-          };
-        }
-
-        return data;
-      },
-    ],
+    beforeChange: [createdByOnCreateBeforeChangeHook],
   },
 };

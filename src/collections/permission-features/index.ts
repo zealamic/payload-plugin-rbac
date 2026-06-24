@@ -1,17 +1,28 @@
 import type { CollectionConfig, PayloadRequest } from "payload";
 import { ERROR_KEYS, SUCCESS_KEYS } from "../../lib/constants/message.js";
 import { STATUS } from "../../lib/constants/permission-feature.js";
+import { createdByOnCreateBeforeChangeHook } from "../../lib/utils/hooks.js";
 import {
   getArrayOfMergedFieldAffectingData,
+  getCreatedByRelationshipField,
   getSuperAdminAccess,
   mergeBeforeListTable,
+  resolveUsersCollectionSlug,
   toLocaleRecord,
   toSelectPlaceholder,
 } from "../../lib/utils/index.js";
 import type { PermissionFeaturesCollectionParams } from "./types.js";
 
 export const getPermissionFeaturesCollection = (params: PermissionFeaturesCollectionParams) => {
-  const { translations = {}, access = {}, fields = [], labels = {}, admin = {} } = params || {};
+  const {
+    translations = {},
+    access = {},
+    fields = [],
+    labels = {},
+    admin = {},
+    usersCollectionSlug: usersCollectionSlugInput,
+  } = params || {};
+  const usersCollectionSlug = resolveUsersCollectionSlug(usersCollectionSlugInput);
   const arrTranslationsKeys = Object.keys(translations);
   const permissionFeatures: CollectionConfig = {
     slug: "permission-features",
@@ -109,8 +120,12 @@ export const getPermissionFeaturesCollection = (params: PermissionFeaturesCollec
             ),
           },
         },
+        getCreatedByRelationshipField(usersCollectionSlug),
       ],
     }),
+    hooks: {
+      beforeChange: [createdByOnCreateBeforeChangeHook],
+    },
     endpoints: [
       {
         path: "/reorder",

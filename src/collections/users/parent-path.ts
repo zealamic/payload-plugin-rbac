@@ -6,6 +6,7 @@ import type {
 } from "payload";
 import { PARENT_PATH_SEPARATOR } from "../../lib/constants/user.js";
 import { toID } from "../../lib/utils/data.js";
+import { createdByOnCreateBeforeChangeHook } from "../../lib/utils/hooks.js";
 
 type UserDoc = {
   id?: string | number;
@@ -289,9 +290,14 @@ export const mergeUserCollectionHooks = ({
 }) => {
   const { beforeChange, afterChange, afterDelete } = createUserParentPathHooks(userSlug);
 
+  const finalBeforeChange = mergeHookArrays(
+    existingHooks?.beforeChange,
+    createdByOnCreateBeforeChangeHook,
+  );
+
   return {
     ...existingHooks,
-    beforeChange: mergeHookArrays(existingHooks?.beforeChange, beforeChange),
+    beforeChange: mergeHookArrays(finalBeforeChange, beforeChange),
     afterChange: mergeHookArrays(existingHooks?.afterChange, afterChange),
     afterDelete: mergeHookArrays(existingHooks?.afterDelete, afterDelete),
   };

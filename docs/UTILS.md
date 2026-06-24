@@ -5,7 +5,7 @@ Utilities exported from the plugin for access control, field merging, IDs, and t
 **Import from either:**
 
 ```ts
-import { getPermissionAccess, CONSTANTS } from "@zealamic/payload-plugin-rbac";
+import { getPermissionAccess, CONSTANTS, createdByOnCreateBeforeChangeHook } from "@zealamic/payload-plugin-rbac";
 // or
 import { getPermissionAccess } from "@zealamic/payload-plugin-rbac/utils";
 ```
@@ -19,8 +19,10 @@ Both resolve to the same barrel: `src/lib/utils/index.ts`.
 | Module         | File                            | Purpose                                     |
 | -------------- | ------------------------------- | ------------------------------------------- |
 | `access`       | `src/lib/utils/access.ts`       | RBAC + data-scope access helpers and types  |
+| `collections`  | `src/lib/utils/collections.ts`  | Users slug resolution, `createdBy` field helper, list UI merge |
 | `data`         | `src/lib/utils/data.ts`         | ID normalization                            |
 | `fields`       | `src/lib/utils/fields.ts`       | Plugin field merge for collection overrides |
+| `hooks`        | `src/lib/utils/hooks.ts`        | Reusable collection hooks (`createdBy` on create) |
 | `localization` | `src/lib/utils/localization.ts` | i18n merge helpers used by the plugin       |
 
 `access-cache.ts` is **internal** (request-scoped memoization inside access helpers — not exported).
@@ -43,7 +45,7 @@ type DataScopeOptions = {
 | `createdByField`      | Document ownership field for `own` / `hierarchy` / `all` row filters |
 | `usersCollectionSlug` | Users collection slug for hierarchy descendant lookups               |
 
-The plugin uses `createdByField: "id"` on the auth users collection (each user “owns” their own document). App collections typically use `"createdBy"`.
+The plugin uses `createdByField: "id"` on the auth users collection (each user “owns” their own document). For other collections, **you** add a `createdBy` relationship (or equivalent) — see [Ownership field](#ownership-field-required-for-data-scope) under `getPermissionAccess`.
 
 ---
 
@@ -53,25 +55,47 @@ Unified entrypoint for Payload `collection.access` handlers. Pass `featureCode` 
 
 `featureCode` / `actionCode` must match `permission-features.code` and `permission-actions.code`. The user must have an **enabled** row in `roles-permissions` for a matching active `permissions` record (unless super admin).
 
+> **Before wiring access:** every collection you protect with row-level rules (`dataScope`: `own` / `hierarchy` / `all`) needs an **ownership field** on the document — Payload does not add this for you. Add a relationship to your auth users collection (commonly named `createdBy`), set it when a record is created, then point `getPermissionAccess` at that field via `options.createdByField` (defaults to `"createdBy"`). Permission-only checks (`create`, or `read` without `options`) do not require an ownership field.
+
 #### Which arguments to pass
 
 | Operation | Arguments | What you get back |
 | --------- | --------- | ----------------- |
 | `create`, `readVersions`, `unlock`, … | `featureCode` + `actionCode` only | `boolean` — user has the permission or not |
 | `read` (with row-level filter) | above + `options` | `boolean` or a Payload `Where` — permission check, then data-scope filter |
-| `update`, `delete` | above + `mode: "modify"` + `options` | `boolean` — loads the target document, then checks permission + scope for that row |
+| `update`, `delete` | above + `mode: "modify"` (+ `options` when ownership field ≠ `createdBy`) | `boolean` — loads the target document, then checks permission + scope for that row |
+
+#### Ownership field (required for data scope)
+
+For each **app collection** you want to permission with `dataScope`, add a field that stores **who owns the document** (who created it or who it belongs to). This is separate from `getPermissionAccess` — the helper only reads the field you configure; it does not create it.
+
+**Minimum setup per collection:**
+
+1. **Add a relationship field** to your auth users collection (`users`, or `config.admin.user` if custom).
+2. **Set it on create** — typically a `beforeChange` hook that assigns `req.user.id` (use `createdByOnCreateBeforeChangeHook` or your own hook for custom field names).
+3. **Wire `getPermissionAccess`** — pass `options` on `read` / `update` / `delete` so the helper knows which field to use.
+
+Recommended field name: **`createdBy`**. You may use any name (`author`, `owner`, `assignedTo`, …) as long as it holds a user id and you pass `createdByField` in `options`.
+
+| Your field name | What to pass to `getPermissionAccess` |
+| --------------- | ------------------------------------- |
+| `createdBy` (recommended) | `options: {}` on `read`, or omit `options` on `update` / `delete` — `createdByField` defaults to `"createdBy"` |
+| Any other name (e.g. `author`, `owner`) | `options: { createdByField: "yourFieldName" }` on `read`, `update`, and `delete` |
+
+`usersCollectionSlug` defaults to `"users"`. Pass `options: { usersCollectionSlug: "…" }` when your auth collection slug differs from `config.admin.user` (e.g. `"accounts"`).
 
 **Rules:**
 
 - Do **not** pass `collectionSlug` unless `mode` is `"modify"`.
 - On `update` / `delete`, omit `collectionSlug` when it matches `featureCode` (same as the collection `slug`) — it defaults to `featureCode`. Pass `collectionSlug` only when the collection slug differs from the permission feature code.
-- Pass `options` on `read` when roles use `dataScope` (`own` / `hierarchy` / `all`) and documents have an ownership field. Omit field keys when using Payload defaults (`createdBy`, `users`).
-- Pass `options` on `update` / `delete` only when the ownership field or users slug differs from defaults — otherwise omit `options` entirely.
-- Omit `options` on `create` — creation is permission-only; set `createdBy` in a `beforeChange` hook so later reads/updates can resolve scope.
+- Add an ownership field + create hook **before** wiring `options` on `read` / `update` / `delete` — without it, scope checks cannot attribute documents to a user.
+- Pass `options` on `read` when roles use `dataScope`. Use `options: {}` when the field is named `createdBy`; set `createdByField` when it is not.
+- On `update` / `delete`, omit `options` when the field is `createdBy`; pass `createdByField` for any other ownership field name.
+- Omit `options` on `create` — creation is permission-only; set the ownership field in `beforeChange` so later reads/updates can resolve scope.
 
-`options` defaults to `createdByField: "createdBy"` and `usersCollectionSlug: "users"` (Payload's usual setup). On the **users** collection the plugin uses `createdByField: "id"` instead (each user owns their own row).
+On the **users** collection the plugin uses `createdByField: "id"` (each user owns their own row) — see `src/collections/users/index.ts`.
 
-#### Full collection example
+#### Full collection example (`createdBy`)
 
 ```ts
 const FEATURE_CODE = "posts";
@@ -85,14 +109,14 @@ export const Posts: CollectionConfig = {
     actionCode: "create",
   }),
 
-  // Read list: permission + data-scope Where (own / hierarchy / all)
+  // Read: pass options: {} — createdByField defaults to "createdBy"
   read: getPermissionAccess({
     featureCode: FEATURE_CODE,
     actionCode: "read",
     options: {},
   }),
 
-  // Update/delete: options default to createdBy + users
+  // Update/delete: omit options when ownership field is "createdBy"
   update: getPermissionAccess({
     featureCode: FEATURE_CODE,
     actionCode: "update",
@@ -104,6 +128,7 @@ export const Posts: CollectionConfig = {
     mode: "modify",
   }),
   },
+  // You must add this field — Payload does not create it for you
   fields: [
     {
       name: "createdBy",
@@ -113,10 +138,67 @@ export const Posts: CollectionConfig = {
     },
   ],
   hooks: {
+    beforeChange: [createdByOnCreateBeforeChangeHook],
+  },
+};
+```
+
+Or import the hook explicitly:
+
+```ts
+import {
+  getPermissionAccess,
+  createdByOnCreateBeforeChangeHook,
+} from "@zealamic/payload-plugin-rbac";
+```
+
+Full working collection: `dev/collections/posts.ts`. Users collection wiring (with `createdByField: "id"`): `src/collections/users/index.ts`.
+
+#### Custom ownership field name (`author`)
+
+When the creator is stored under a different relationship field, pass `createdByField` in `options`:
+
+```ts
+const FEATURE_CODE = "articles";
+
+export const Articles: CollectionConfig = {
+  slug: FEATURE_CODE,
+  access: {
+    create: getPermissionAccess({
+      featureCode: FEATURE_CODE,
+      actionCode: "create",
+    }),
+    read: getPermissionAccess({
+      featureCode: FEATURE_CODE,
+      actionCode: "read",
+      options: { createdByField: "author" },
+    }),
+    update: getPermissionAccess({
+      featureCode: FEATURE_CODE,
+      actionCode: "update",
+      mode: "modify",
+      options: { createdByField: "author" },
+    }),
+    delete: getPermissionAccess({
+      featureCode: FEATURE_CODE,
+      actionCode: "delete",
+      mode: "modify",
+      options: { createdByField: "author" },
+    }),
+  },
+  fields: [
+    {
+      name: "author",
+      type: "relationship",
+      relationTo: "users",
+      admin: { readOnly: true },
+    },
+  ],
+  hooks: {
     beforeChange: [
       ({ req, data, operation }) => {
-        if (operation === "create" && req.user?.id && !data?.createdBy) {
-          return { ...data, createdBy: req.user.id };
+        if (operation === "create" && req.user?.id && !data?.author) {
+          return { ...data, author: req.user.id };
         }
         return data;
       },
@@ -124,8 +206,6 @@ export const Posts: CollectionConfig = {
   },
 };
 ```
-
-Full working collection: `dev/collections/posts.ts`. Users collection wiring (with `createdByField: "id"`): `src/collections/users/index.ts`.
 
 #### How each mode behaves at runtime
 
@@ -151,7 +231,9 @@ Safe for access handlers; cache is discarded when the request ends.
 - Using `mode: "modify"` on `read` or `create` — modify mode is only for `update` / `delete`
 - Passing `collectionSlug` without `mode: "modify"` — invalid config; IDE/type-check should flag this
 - Expecting filtered list results on `read` without `options` — you get permission-only, no row filter
-- Missing `createdBy` (or your `createdByField`) on documents — scope checks cannot attribute ownership
+- Using `dataScope` without adding an ownership relationship field on the collection
+- Not setting the ownership field on create — scope checks cannot attribute documents to a user
+- Using a custom field name but omitting `createdByField` in `options` — helper looks at `createdBy` by default
 - `featureCode` / `actionCode` not matching seeded `permission-features` / `permission-actions` codes
 
 ---
@@ -274,6 +356,80 @@ Build final `fields` array:
 
 See [COLLECTIONS](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/COLLECTIONS.md#field-merge-rules).
 
+### `resolveUsersCollectionSlug(adminUser?)`
+
+Returns the auth users collection slug: `adminUser || "users"`. The plugin uses `config.admin.user` when registering collections — use the same helper in your app code when building `relationTo` or `getPermissionAccess` options.
+
+```ts
+import { resolveUsersCollectionSlug } from "@zealamic/payload-plugin-rbac";
+
+const usersSlug = resolveUsersCollectionSlug(config.admin?.user);
+```
+
+### `getCreatedByRelationshipField(usersCollectionSlug)`
+
+Returns a hidden `createdBy` relationship field definition (`relationTo: usersCollectionSlug`). Used by plugin RBAC collections; safe to reuse in your collections.
+
+```ts
+import {
+  getCreatedByRelationshipField,
+  resolveUsersCollectionSlug,
+} from "@zealamic/payload-plugin-rbac";
+
+fields: [
+  getCreatedByRelationshipField(resolveUsersCollectionSlug("members")),
+],
+```
+
+For a visible, read-only field in Admin (typical app collections), define the field inline instead — see [Full collection example](#full-collection-example-createdby).
+
+### `mergeBeforeListTable(pluginComponent, consumerComponents?)`
+
+Prepends a plugin list component before consumer `beforeListTable` entries. Used internally by reorder clients; exported for custom plugins.
+
+---
+
+## Hooks exports
+
+### `createdByOnCreateBeforeChangeHook`
+
+Payload `CollectionBeforeChangeHook` that sets `createdBy` to `req.user.id` on **create** when the field is not already set. Pair with a `createdBy` relationship field and `getPermissionAccess` data-scope options.
+
+```ts
+import {
+  createdByOnCreateBeforeChangeHook,
+  getPermissionAccess,
+} from "@zealamic/payload-plugin-rbac";
+
+export const Posts: CollectionConfig = {
+  slug: "posts",
+  hooks: {
+    beforeChange: [createdByOnCreateBeforeChangeHook],
+  },
+  access: {
+    read: getPermissionAccess({
+      featureCode: "posts",
+      actionCode: "read",
+      options: {},
+    }),
+  },
+  fields: [
+    {
+      name: "createdBy",
+      type: "relationship",
+      relationTo: "users",
+      admin: { readOnly: true },
+    },
+  ],
+};
+```
+
+**Notes:**
+
+- Only sets the field named **`createdBy`** — for `author` / other names, write a custom hook (see [Custom ownership field](#custom-ownership-field-name-author)).
+- No-op when `req.user` is missing or `data.createdBy` is already set.
+- The plugin uses this hook on RBAC collections (`permission-actions`, `roles`, …) and on the auth users collection via `mergeUserCollectionHooks`.
+
 ---
 
 ## Localization exports
@@ -318,6 +474,7 @@ CONSTANTS.PERMISSION_ACTION.TYPE; // { MAIN, SUB }
 CONSTANTS.PERMISSION_ACTION.STATUS;
 CONSTANTS.PERMISSION_FEATURE.STATUS;
 CONSTANTS.USER.PARENT_PATH_SEPARATOR;
+CONSTANTS.USER.DEFAULT_USERS_COLLECTION_SLUG; // "users"
 CONSTANTS.GENERAL.RBAC_PREFIX;
 ```
 
@@ -328,6 +485,8 @@ CONSTANTS.GENERAL.RBAC_PREFIX;
 | Task                              | Helper / pattern                                               |
 | --------------------------------- | -------------------------------------------------------------- |
 | Collection CRUD access            | `getPermissionAccess` — see table above per operation          |
+| Ownership field for data scope    | Add `createdBy` relationship + `createdByOnCreateBeforeChangeHook` (or custom hook) on each protected collection |
+| Auth users slug                   | `resolveUsersCollectionSlug(config.admin?.user)`                                                                 |
 | RBAC collections (admin only)     | `getSuperAdminAccess`                                          |
 | Custom row-level read filter      | `getPermissionAccess` + `options` on `read`                      |
 | Custom document update/delete     | `getPermissionAccess` + `mode: "modify"` (+ `collectionSlug` only when ≠ `featureCode`) |
