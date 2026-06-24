@@ -1,5 +1,6 @@
 import type { CollectionConfig } from "payload";
 import { STATUS } from "../../lib/constants/permission.js";
+import { createdByOnCreateBeforeChangeHook } from "../../lib/utils/hooks.js";
 import {
   getArrayOfMergedFieldAffectingData,
   getCreatedByRelationshipField,
@@ -8,7 +9,6 @@ import {
   toLocaleRecord,
   toSelectPlaceholder,
 } from "../../lib/utils/index.js";
-import { createdByOnCreateBeforeChangeHook } from "../../lib/utils/hooks.js";
 import type { PermissionsCollectionParams } from "./types.js";
 
 export const getPermissionsCollection = (params: PermissionsCollectionParams) => {

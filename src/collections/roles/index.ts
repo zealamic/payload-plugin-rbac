@@ -1,5 +1,6 @@
 import type { CollectionConfig, Condition } from "payload";
 import { DATA_SCOPE, STATUS } from "../../lib/constants/role.js";
+import { createdByOnCreateBeforeChangeHook } from "../../lib/utils/hooks.js";
 import {
   getArrayOfMergedFieldAffectingData,
   getCreatedByRelationshipField,
@@ -8,7 +9,6 @@ import {
   toLocaleRecord,
   toSelectPlaceholder,
 } from "../../lib/utils/index.js";
-import { createdByOnCreateBeforeChangeHook } from "../../lib/utils/hooks.js";
 import { syncPermissionMatrixDraftAfterChange } from "./hooks/sync-permission-matrix-draft.js";
 import type { RolesCollectionParams } from "./types.js";
 

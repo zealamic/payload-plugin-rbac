@@ -1,6 +1,7 @@
 import type { CollectionConfig, PayloadRequest } from "payload";
 import { ERROR_KEYS, SUCCESS_KEYS } from "../../lib/constants/message.js";
 import { STATUS, TYPE } from "../../lib/constants/permission-action.js";
+import { createdByOnCreateBeforeChangeHook } from "../../lib/utils/hooks.js";
 import {
   getArrayOfMergedFieldAffectingData,
   getCreatedByRelationshipField,
@@ -10,7 +11,7 @@ import {
   toLocaleRecord,
   toSelectPlaceholder,
 } from "../../lib/utils/index.js";
-import { createdByOnCreateBeforeChangeHook } from "../../lib/utils/hooks.js";
+
 import type { PermissionActionsCollectionParams } from "./types.js";
 
 export const getPermissionActionsCollection = (params: PermissionActionsCollectionParams) => {
