@@ -5,7 +5,7 @@ import {
   getArrayOfMergedFieldAffectingData,
   getCreatedByRelationshipField,
   getSuperAdminAccess,
-  resolveUsersCollectionSlug,
+  // resolveUsersCollectionSlug,
   toLocaleRecord,
   toSelectPlaceholder,
 } from "../../lib/utils/index.js";
@@ -18,9 +18,9 @@ export const getPermissionsCollection = (params: PermissionsCollectionParams) =>
     fields = [],
     labels = {},
     admin = {},
-    usersCollectionSlug: usersCollectionSlugInput,
+    // usersCollectionSlug: usersCollectionSlugInput,
   } = params || {};
-  const usersCollectionSlug = resolveUsersCollectionSlug(usersCollectionSlugInput);
+  // const usersCollectionSlug = resolveUsersCollectionSlug(usersCollectionSlugInput);
   const arrTranslationsKeys = Object.keys(translations);
   const permissions: CollectionConfig = {
     slug: "permissions",
@@ -140,7 +140,7 @@ export const getPermissionsCollection = (params: PermissionsCollectionParams) =>
             ),
           },
         },
-        getCreatedByRelationshipField(usersCollectionSlug),
+        getCreatedByRelationshipField(),
       ],
     }),
     hooks: {

@@ -6,7 +6,7 @@ Centralized **role-based access control (RBAC)** for [Payload CMS](https://paylo
 
 Permissions live in the database (feature + action), are assigned to roles, and enforced via reusable access helpers — editable in Admin without redeploying policy code.
 
-> **Row-level access (`dataScope`):** Payload does **not** add a creator/owner field on your collections. For each app collection you protect with `own` / `hierarchy` / `all`, add a relationship to your auth users collection (commonly `createdBy`), set it on create, then wire `getPermissionAccess`. Details → **[UTILS — Ownership field](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/UTILS.md#ownership-field-required-for-data-scope)**.
+> **Row-level access (`dataScope`):** add a field storing the creator’s user **id** (`text` is enough; `relationship` optional), set it on create, wire `getPermissionAccess`. → **[UTILS](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/UTILS.md#ownership-field-required-for-data-scope)**
 
 ---
 
@@ -30,8 +30,8 @@ Permissions live in the database (feature + action), are assigned to roles, and 
 - **Five RBAC collections** — features, actions, permissions, roles, join table ([details](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/COLLECTIONS.md))
 - **Multi-role users** — union of enabled grants across assigned roles
 - **Granular permissions** — any `featureCode` + `actionCode` pair ([helpers](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/UTILS.md))
-- **Data scope** — per-role `own` / `hierarchy` / `all` for row-level filtering; requires an **ownership field** on each protected collection ([dataScope vs isSuperAdmin](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/COLLECTIONS.md#what-is-datascope))
-- **Auth users slug** — `config.admin.user` (default `users`) is resolved automatically for `createdBy` relations and access helpers
+- **Data scope** — `own` / `hierarchy` / `all`; needs ownership field with user **id** ([UTILS](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/UTILS.md#ownership-field-required-for-data-scope))
+- **Auth users slug** — `config.admin.user` (default `users`) for hierarchy + `options.usersCollectionSlug`
 - **Permission matrix** — role **update** UI; syncs draft → `roles-permissions` on save
 - **Reorder drawers** — drag-and-drop `sortOrder` for permission features and actions on each collection list view
 - **Custom matrix UI** — optional client field component + render props ([CUSTOM_COMPONENTS](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/CUSTOM_COMPONENTS.md))
@@ -96,116 +96,44 @@ Then apply the migration with `migrate` (or your project's usual migration workf
 
 ### 4. Protect app collections
 
-For **row-level** rules (`dataScope`), each collection needs:
-
-1. A **relationship** to your auth users collection (`createdBy`, or another name — see [UTILS](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/UTILS.md#ownership-field-required-for-data-scope))
-2. A **create hook** that sets that field to `req.user.id`
-3. **`getPermissionAccess`** with `options` on `read` and `mode: "modify"` on `update` / `delete`
-
-`collectionSlug` defaults to `featureCode` on modify. `options.createdByField` defaults to `"createdBy"`; `usersCollectionSlug` defaults to `config.admin.user`.
+For `dataScope`, each collection needs: (1) ownership field with user **id** — `text` default, `relationship` only for Admin UI, (2) create hook (`createdByOnCreateBeforeChangeHook`), (3) `getPermissionAccess` with `options` on `read` and `mode: "modify"` on `update` / `delete`. Full guide → **[UTILS](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/UTILS.md#getpermissionaccessargs)** · relationship demo: `dev/collections/posts.ts`
 
 ```ts
 import type { CollectionConfig } from "payload";
-import {
-  createdByOnCreateBeforeChangeHook,
-  getPermissionAccess,
-} from "@zealamic/payload-plugin-rbac";
+import { createdByOnCreateBeforeChangeHook, getPermissionAccess } from "@zealamic/payload-plugin-rbac";
 
 export const Posts: CollectionConfig = {
   slug: "posts",
   access: {
-    read: getPermissionAccess({
-      featureCode: "posts",
-      actionCode: "read",
-      options: {},
-    }),
-    create: getPermissionAccess({
-      featureCode: "posts",
-      actionCode: "create",
-    }),
-    update: getPermissionAccess({
-      featureCode: "posts",
-      actionCode: "update",
-      mode: "modify",
-    }),
-    delete: getPermissionAccess({
-      featureCode: "posts",
-      actionCode: "delete",
-      mode: "modify",
-    }),
+    read: getPermissionAccess({ featureCode: "posts", actionCode: "read", options: {} }),
+    create: getPermissionAccess({ featureCode: "posts", actionCode: "create" }),
+    update: getPermissionAccess({ featureCode: "posts", actionCode: "update", mode: "modify" }),
+    delete: getPermissionAccess({ featureCode: "posts", actionCode: "delete", mode: "modify" }),
   },
-  hooks: {
-    beforeChange: [createdByOnCreateBeforeChangeHook],
-  },
-  fields: [
-    // Required for dataScope — Payload does not create this for you
-    {
-      name: "createdBy",
-      type: "relationship",
-      relationTo: "users", // match config.admin.user
-      admin: { readOnly: true },
-    },
-  ],
+  hooks: { beforeChange: [createdByOnCreateBeforeChangeHook] },
+  fields: [{ name: "createdBy", type: "text", admin: { readOnly: true } }],
 };
 ```
 
-**Access order:** no user → deny · super admin → allow · else → matrix permission (+ data scope when `options` / `mode: "modify"` is used).
-
-Custom field name (`author`, `owner`, …)? → **[UTILS — Custom ownership field](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/UTILS.md#custom-ownership-field-name-author)** · full `getPermissionAccess` reference → **[UTILS](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/UTILS.md)** · working example: `dev/collections/posts.ts`
+**Access order:** no user → deny · super admin → allow · else → matrix permission (+ scope when `options` / `mode: "modify"`).
 
 ---
 
 ## Reorder overview (features & actions)
 
-Both **`permission-features`** and **`permission-actions`** list views include a **Reorder** button above the table. Admins drag cards in a drawer to set `sortOrder` without editing each record manually. The field `sortOrder` is **hidden** on create/edit forms by default — order is managed through these drawers.
-
-Saved order is reflected in the **permission matrix** on the role update screen:
-
-| What you reorder    | Where it appears in the matrix                   |
-| ------------------- | ------------------------------------------------ |
-| Permission features | Row order (top to bottom)                        |
-| Main actions        | Column order (left to right)                     |
-| Sub actions         | Sub-action checkbox order under each feature row |
+List views for **`permission-features`** and **`permission-actions`** include a **Reorder** drawer to set `sortOrder` (hidden on edit forms). Order drives the role permission matrix: features → rows, main actions → columns, sub actions → checkbox order under each row.
 
 ![Sorted matrix](https://github.com/zealamic/payload-plugin-rbac/blob/main/assets/sort-3.jpg)
 
-### Sort permission features
-
-Open **Permission Features** → **Reorder** → drag features → **Save order**.
-
-Lower `sortOrder` values appear **higher** in the matrix feature list.
+| Step | Action |
+| ---- | ------ |
+| Features | **Permission Features** → **Reorder** → drag → **Save order** |
+| Actions | **Permission Actions** → **Reorder** → pick **Main** or **Sub** → drag → **Save order** |
 
 ![Reorder permission features](https://github.com/zealamic/payload-plugin-rbac/blob/main/assets/sort-1.jpg)
-
-### Sort permission actions
-
-Open **Permission Actions** → **Reorder** → choose **Main** or **Sub** from the type selector → drag actions → **Save order**.
-
-- **Main** — controls the order of main action columns (`create`, `read`, `update`, `delete`, …).
-- **Sub** — controls the order of sub-action checkboxes shown under each feature row.
-
-Main and sub actions each have their own `sortOrder` sequence (`0…n` independently).
-
 ![Reorder permission actions](https://github.com/zealamic/payload-plugin-rbac/blob/main/assets/sort-2.jpg)
 
-### API & access
-
-Reorder saves through collection endpoints:
-
-- `POST /api/permission-features/reorder`
-- `POST /api/permission-actions/reorder`
-
-Request body:
-
-```json
-{
-  "sortedItems": [{ "id": "…", "sortOrder": 0 }]
-}
-```
-
-Requires an authenticated Admin user with **update** access on the collection (super admin by default).
-
-Customize drawer labels via [TRANSLATIONS — Reorder drawers](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/TRANSLATIONS.md#reorder-drawers). Collection behavior and overrides: [COLLECTIONS — permission-actions](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/COLLECTIONS.md#permission-actions) · [permission-features](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/COLLECTIONS.md#permission-features).
+**API:** `POST /api/permission-features/reorder` · `POST /api/permission-actions/reorder` — body `{ "sortedItems": [{ "id": "…", "sortOrder": 0 }] }`. Requires **update** access (super admin by default). Details → [COLLECTIONS](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/COLLECTIONS.md#permission-actions) · labels → [TRANSLATIONS — Reorder drawers](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/TRANSLATIONS.md#reorder-drawers).
 
 ---
 
@@ -237,7 +165,7 @@ Full reference: **[UTILS](https://github.com/zealamic/payload-plugin-rbac/blob/m
 | Function                                                             | Purpose                                                               |
 | -------------------------------------------------------------------- | --------------------------------------------------------------------- |
 | `getPermissionAccess`                                                | Unified access: permission-only, read `Where`, or modify per-document |
-| `getCreatedByRelationshipField` / `createdByOnCreateBeforeChangeHook` | Reuse plugin `createdBy` field + hook in your collections              |
+| `getCreatedByRelationshipField` / `createdByOnCreateBeforeChangeHook` | Ownership field + create hook → [UTILS](https://github.com/zealamic/payload-plugin-rbac/blob/main/docs/UTILS.md#getcreatedbyrelationshipfieldparams) |
 | `resolveUsersCollectionSlug`                                         | Same `admin.user` → slug resolution as the plugin                       |
 | `getSuperAdminAccess`                                                | Super admin only (default on RBAC collections)                        |
 | `getAuthenticatedOrSuperAdminAccess`                                 | Owner or super admin                                                  |

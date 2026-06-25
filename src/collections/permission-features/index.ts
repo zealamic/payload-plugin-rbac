@@ -7,7 +7,7 @@ import {
   getCreatedByRelationshipField,
   getSuperAdminAccess,
   mergeBeforeListTable,
-  resolveUsersCollectionSlug,
+  // resolveUsersCollectionSlug,
   toLocaleRecord,
   toSelectPlaceholder,
 } from "../../lib/utils/index.js";
@@ -20,9 +20,9 @@ export const getPermissionFeaturesCollection = (params: PermissionFeaturesCollec
     fields = [],
     labels = {},
     admin = {},
-    usersCollectionSlug: usersCollectionSlugInput,
+    // usersCollectionSlug: usersCollectionSlugInput,
   } = params || {};
-  const usersCollectionSlug = resolveUsersCollectionSlug(usersCollectionSlugInput);
+  // const usersCollectionSlug = resolveUsersCollectionSlug(usersCollectionSlugInput);
   const arrTranslationsKeys = Object.keys(translations);
   const permissionFeatures: CollectionConfig = {
     slug: "permission-features",
@@ -120,7 +120,7 @@ export const getPermissionFeaturesCollection = (params: PermissionFeaturesCollec
             ),
           },
         },
-        getCreatedByRelationshipField(usersCollectionSlug),
+        getCreatedByRelationshipField(),
       ],
     }),
     hooks: {
