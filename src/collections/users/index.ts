@@ -48,7 +48,7 @@ const buildDefaultFields = (
         readOnly: true,
       },
     },
-    getCreatedByRelationshipField(userSlug),
+    getCreatedByRelationshipField(),
   ];
 };
 

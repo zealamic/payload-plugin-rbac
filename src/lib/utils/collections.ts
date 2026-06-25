@@ -9,12 +9,28 @@ export const mergeBeforeListTable = (
 export const resolveUsersCollectionSlug = (adminUser?: string | null): string =>
   adminUser || DEFAULT_USERS_COLLECTION_SLUG;
 
-export const getCreatedByRelationshipField = (usersCollectionSlug: string): Field => ({
-  name: "createdBy",
-  type: "relationship",
-  relationTo: usersCollectionSlug,
-  hasMany: false,
-  admin: {
-    hidden: true,
-  },
-});
+export const getCreatedByRelationshipField = (params?: {
+  createdByFieldName?: string | null;
+  usersCollectionSlug?: string | null;
+}): Field => {
+  const { createdByFieldName, usersCollectionSlug } = params || {};
+  if (usersCollectionSlug) {
+    return {
+      name: createdByFieldName || "createdBy",
+      type: "relationship",
+      relationTo: usersCollectionSlug,
+      hasMany: false,
+      admin: {
+        hidden: true,
+      },
+    };
+  }
+
+  return {
+    name: createdByFieldName || "createdBy",
+    type: "text",
+    admin: {
+      hidden: true,
+    },
+  };
+};
